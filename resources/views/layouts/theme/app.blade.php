@@ -11,9 +11,10 @@
     <title>Dashboard - Analytics | Materio - Bootstrap Material Design Admin Template</title>
 
     <meta name="description" content="" />
-
+    @livewireStyles
     @include('layouts.theme.styles')
     @stack('my-styles')
+
 </head>
 
 <body>
@@ -59,8 +60,10 @@
         <div class="drag-target"></div>
     </div>
     <!-- / Layout wrapper -->
+    @livewireScripts
     @include('layouts.theme.scripts')
     @stack('my-scripts')
+
 </body>
 
 </html>
