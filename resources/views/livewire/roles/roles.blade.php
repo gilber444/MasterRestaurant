@@ -38,7 +38,7 @@
                     </div>
 
                     <div class="table-responsive mt-3">
-                        <table class="table table-responsive-md table-hover table-sm">
+                        <table class="table table-responsive-md table-hover">
                             <thead class="thead-primary">
                                 <tr>
                                     <th>Descripción</th>
@@ -132,7 +132,7 @@
 
 
                     <div class="table-responsive mt-3">
-                        <table class="table table-responsive-md table-hover table-sm">
+                        <table class="table table-responsive-md table-hover">
                             <thead class="thead-primary">
                                 <tr>
                                     <th>Descripción</th>
@@ -167,7 +167,6 @@
                             </tbody>
                         </table>
                     </div>
-                    {{ $permisos->links() }}
                 </div>
             </div>
         </div>

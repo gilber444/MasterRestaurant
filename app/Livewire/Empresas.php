@@ -2,7 +2,7 @@
 
 namespace App\Livewire;
 
-use App\Models\Empresas;
+use App\Models\Empresas as Empresa;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
