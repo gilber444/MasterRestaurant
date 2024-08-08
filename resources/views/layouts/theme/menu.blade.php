@@ -6,32 +6,78 @@
             <div data-i18n="Dashboards">Dashboards</div>
         </a>
     </li>
-    <li class="menu-item
-        {{ Request::is('roles') ? 'active' : '' }}
-        {{ Request::is('users') ? 'active' : '' }}
-        {{ Request::is('asignar') ? 'active' : '' }}">
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-            <i class="menu-icon tf-icons ri-tools-fill"></i>
-            <div data-i18n="Configuraciones">Configuraciones</div>
-        </a>
-        <ul class="menu-sub">
-            <li class="menu-item {{ Request::is('roles') ? 'active' : '' }}">
-                <a href="{{ route('roles') }}" class="menu-link">
-                    <div data-i18n="Roles">Roles</div>
-                </a>
-            </li>
-            <li class="menu-item {{ Request::is('asignar') ? 'active' : '' }}">
-                <a href="{{ route('asignar') }}" class="menu-link">
-                    <div data-i18n="Asignar Permisos">Asignar Permisos</div>
-                </a>
-            </li>
-            <li class="menu-item {{ Request::is('users') ? 'active' : '' }}">
-                <a href="{{ route('users') }}" class="menu-link">
-                    <div data-i18n="Usuarios">Usuarios</div>
-                </a>
-            </li>
-        </ul>
-    </li>
+    @can('Configuraciones_Index')
+        <li class="menu-item
+            {{ Request::is('roles') ? 'active' : '' }}
+            {{ Request::is('users') ? 'active' : '' }}
+            {{ Request::is('asignar') ? 'active' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons ri-tools-fill"></i>
+                <div data-i18n="Configuraciones">Configuraciones</div>
+            </a>
+            <ul class="menu-sub">
+                @can('Roles_Index')
+                    <li class="menu-item {{ Request::is('roles') ? 'active' : '' }}">
+                        <a href="{{ route('roles') }}" class="menu-link">
+                            <div data-i18n="Roles">Roles</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Asignar_Permisos')
+                    <li class="menu-item {{ Request::is('asignar') ? 'active' : '' }}">
+                        <a href="{{ route('asignar') }}" class="menu-link">
+                            <div data-i18n="Asignar Permisos">Asignar Permisos</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Usuarios_Index')
+                    <li class="menu-item {{ Request::is('users') ? 'active' : '' }}">
+                        <a href="{{ route('users') }}" class="menu-link">
+                            <div data-i18n="Usuarios">Usuarios</div>
+                        </a>
+                    </li>
+                @endcan
+            </ul>
+        </li>
+    @endcan
+    @can('AdminEmpresas_Index')
+        <li class="menu-item
+            {{ Request::is('empresa') ? 'active' : '' }}"
+            >
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons ri-building-line"></i>
+                <div data-i18n="Admin Empresas">Admin Empresas</div>
+            </a>
+            <ul class="menu-sub">
+                @can('Empresas_Index')
+                    <li class="menu-item {{ Request::is('empresa') ? 'active' : '' }}">
+                        <a href="{{ route('empresa') }}" class="menu-link">
+                            <div data-i18n="Empresa">Empresa</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Sucursales_Index')
+                    <li class="menu-item {{ Request::is('sucual') ? 'active' : '' }}">
+                        <a href="{{ route('sucursal') }}" class="menu-link">
+                            <div data-i18n="Sucursales">Sucursales</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Parametros_Index')
+                    <li class="menu-item {{ Request::is('parametro') ? 'active' : '' }}">
+                        <a href="{{ route('parametro') }}" class="menu-link">
+                            <div data-i18n="Parametos (Caja)">Parametos (Caja)</div>
+                        </a>
+                    </li>
+                @endcan
+            </ul>
+        </li>
+    @endcan
+    @include('layouts.theme.menu_javier')
+    @include('layouts.theme.menu_ricardo')
+
+
+
     {{--
     <!-- Layouts -->
     <li class="menu-item">

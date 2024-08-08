@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ActividadEconomica extends Model
+class Departamentos extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'codigo',
-        'valor',
+        'departamento',
         'status',
     ];
 
@@ -22,7 +22,9 @@ class ActividadEconomica extends Model
         'deleted_at' => 'datetime',
     ];
 
-
+    /**
+     * Departamento::activo()->get() para obtener todos los departamentos activos.
+     */
     public function scopeActivo($query)
     {
         return $query->where('status', 'Activo');

@@ -2,7 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Models\ActividadEconomica;
+use App\Models\Departamentos;
+use App\Models\Distritos;
 use App\Models\Empresas as Empresa;
+use App\Models\Municipios;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,7 +19,7 @@ class Empresas extends Component
     use WithFileUploads;
 
     public $search, $selected_id, $pageTitle, $modalAction, $componentName, $empresa, $razon, $direccion, $pagination = 10,
-    $departamento, $municipio, $distrito, $correo,$telefono, $responsable, $registro, $giro, $nit, $actividad, $tipoContribuyente, $image;
+    $departamento, $municipio, $distrito, $correo,$telefono, $responsable, $registro, $giro, $nit, $actividad, $tipoContribuyente, $image, $actividadSelectName;
 
     public function mount()
     {
@@ -25,29 +29,23 @@ class Empresas extends Component
 
     public function render()
     {
-        if(strlen($this->search) > 0)
-        {
-            $empresas = Empresas::join('actividad_economicas as a', 'a.id', 'empresas.actividad')
-            ->join('departamentos as d', 'd.id', 'empresas.departamento')
-            ->join('municipios as m', 'm.id', 'empresas.municipio')
-            ->join('distritos as dis', 'dis.id', 'empresas.distrito')
-            ->select('empresas.*', 'a.valor as actividad', 'd.departamento', 'm.municipio', 'dis.distrito')
-            ->where('empresa', 'like', '%' . $this->search . '%')->paginate($this->pagination);
-        }
-        else
-        {
-            $empresas = Empresas::join('actividad_economicas as a', 'a.id', 'empresas.actividad')
-            ->join('departamentos as d', 'd.id', 'empresas.departamento')
-            ->join('municipios as m', 'm.id', 'empresas.municipio')
-            ->join('distritos as dis', 'dis.id', 'empresas.distrito')
-            ->select('empresas.*', 'a.valor as actividad', 'd.departamento', 'm.municipio', 'dis.distrito')
-            ->orderBy('empresa', 'asc')->paginate($this->pagination);
-        }
+        $empresas = Empresa::with(['actividadEconomicas', 'departamento', 'municipio', 'distrito'])
+        ->when(strlen($this->search) > 0, function ($query) {
+            $query->where('empresa', 'like', '%' . $this->search . '%');
+        })
+        ->orderBy('empresa', 'asc')
+        ->paginate($this->pagination);
 
-        return view('livewire.empresas.empresas', ['empresas' => $empresas]);
-        //return view('livewire.empresas.empresas', ['empresas' => $empresas, 'actividades' => ActividadEconomica::orderBy('valor', 'asc')->get(),
-        //'departamentos' => Departamento::orderBy('departamento', 'asc')->get(), 'municipios' => Municipio::orderBy('municipio', 'asc')->get(),
-        //'distritos' => Distritos::orderBy('distrito', 'asc')->get()]);
+        
+        $actividades = ActividadEconomica::orderBy('valor', 'asc')->get();
+        $departamentos = Departamentos::orderBy('departamento', 'asc')->get() ;
+        $municipios = Municipios::orderBy('municipio', 'asc')->get();
+        $distritos = Distritos::orderBy('distrito', 'asc')->get();
+
+        return view('livewire.empresas.empresas', ['empresas' => $empresas, 'actividades' => $actividades, 'departamentos' => $departamentos, 'municipios' => $municipios, 'distritos' => $distritos]);
+        //return view('livewire.empresas.empresas', ['empresas' => $empresas,  ,
+        //,  ,
+        // ]);
     }
 
     protected function rules()

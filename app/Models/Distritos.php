@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ActividadEconomica extends Model
+class Distritos extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'codigo',
-        'valor',
+        'distrito',
+        'municipio',
         'status',
     ];
 
@@ -23,11 +24,18 @@ class ActividadEconomica extends Model
     ];
 
 
+    public function municipios()
+    {
+        return $this->belongsTo(Municipios::class, 'municipio');
+    }
+
+
     public function scopeActivo($query)
     {
         return $query->where('status', 'Activo');
     }
 
+   
     public function scopeDesactivado($query)
     {
         return $query->where('status', 'Desactivado');
