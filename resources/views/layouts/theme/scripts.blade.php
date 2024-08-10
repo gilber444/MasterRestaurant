@@ -15,11 +15,19 @@
 <!-- Vendors JS -->
 <script src="../../assets/vendor/libs/apex-charts/apexcharts.js"></script>
 <script src="../../assets/vendor/libs/sweetalert2/sweetalert2.js"></script>
+<script src="../../assets/vendor/libs/select2/select2.js"></script>
+<script src="../../assets/vendor/libs/tagify/tagify.js"></script>
+<script src="../../assets/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+<script src="../../assets/vendor/libs/bloodhound/bloodhound.js"></script>
 
 <!-- Main JS -->
 <script src="../../assets/js/main.js"></script>
 
+
 <!-- Page JS -->
+<script src="../../assets/js/forms-selects.js"></script>
+<script src="../../assets/js/forms-tagify.js"></script>
+<script src="../../assets/js/forms-typeahead.js"></script>
 <script src="../../assets/js/dashboards-analytics.js"></script>
 <script src="../../assets/vendor/libs/toastr/toastr.js"></script>
 <script src="../../assets/js/ui-toasts.js"></script>
@@ -69,3 +77,4 @@
         });
     }
 </script>
+

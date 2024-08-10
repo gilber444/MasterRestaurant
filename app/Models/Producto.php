@@ -18,4 +18,9 @@ class Producto extends Model
         'unidad_medida',
         'unidad_medida_mh'
     ];
+
+    public function unidadMedidaMH()
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidad_medida_mh');
+    }
 }

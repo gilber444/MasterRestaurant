@@ -29,7 +29,7 @@
                 <tr>
                     <td class="text-center">
                         @if ($empresa->image != null )
-                        <img src="{{ route('empresa.mostrar', ['imagen' => $empresa->image]) }}" alt="Imagen" class=" w-px-40 h-auto rounded-circle">
+                        <img src="{{ route('empresas.mostrar', ['imagen' => $empresa->image]) }}" alt="Imagen" class=" w-px-40 h-auto rounded-circle">
                         @endif
                     </td>
                     <td>{{ $empresa->empresa }}</td>
@@ -38,11 +38,11 @@
                     <td class="text-center">{{ $empresa->nit }}</td>
                     <td>{{ $empresa->giro }}</td>
                     <td class="text-center">
-                        @can('Empresa_Update')
+                        @can('Empresas_Update')
                         <a class="btn btn-warning" href="javascript:void(0);" wire:click="Edit('{{$empresa->id}}')"><i class="bx bx-edit-alt"></i>Editar</a>
                         @endcan
-                        @can('Empresa_Destroy')
-                        <a class="btn btn-danger" href="javascript:void(0);" onclick="Confirm('{{$empresa->id}}')"><i class="bx bx-trash"></i>Eliminar</a>
+                        @can('Empresas_Destroy')
+                        <a class="btn btn-danger" href="javascript:void(0);" onclick="confirmDestroy('{{$empresa->id}}')"><i class="bx bx-trash"></i>Eliminar</a>
                         @endcan
 
                     </td>
@@ -54,5 +54,6 @@
     </div>
     {{$empresas->links()}}
     @include('livewire.empresas.form')
+    @include('common.notis')
 </div>
 

@@ -5,117 +5,105 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-sm-12 col-md-8 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="empresa"><i class='bx bx-edit'></i></span>
-                            <input type="text" wire:model.lazy='empresa' class="form-control"
-                                placeholder="Nombre de la empresa">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='empresa' class="form-control" placeholder="Nombre de la empresa">
+                            <label for="">Empresa</label>
                         </div>
                         @error('empresa')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-4 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="telefono"><i class='fa-solid fa-phone'></i></span>
-                            <input type="text" wire:model.lazy='telefono' class="form-control"
-                                placeholder="Telefono">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='telefono' class="form-control" placeholder="Telefono">
+                            <label for="">Telefono</label>
                         </div>
                         @error('telefono')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="telefono"><i class='fa-solid fa-edit'></i></span>
-                            <input type="text" wire:model.lazy='razon' class="form-control"
-                                placeholder="Razon Social de la empresa">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='razon' class="form-control" placeholder="Razon Social de la empresa">
+                            <label for="">Razon Social</label>
                         </div>
                         @error('razon')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <textarea wire:model='direccion' cols="30" rows="3" class="form-control"
-                                placeholder="Direccion de la empresa"></textarea>
+                        <div class="form-floating form-floating-outline">
+                            <textarea wire:model='direccion' cols="30" rows="3" class="form-control" placeholder="Direccion de la empresa"></textarea>
+                            <label for="">Direccion</label>
                         </div>
                         @error('direccion')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-6 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="nit"><i
-                                    class="fa-solid fa-pen-to-square"></i></span>
+                        <div class="form-floating form-floating-outline">
                             <input type="text" wire:model.lazy='nit' class="form-control" placeholder="NIT">
+                            <label for="">NIT</label>
                         </div>
                         @error('nit')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-6 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="registro"><i
-                                    class="fa-solid fa-pen-to-square"></i></span>
-                            <input type="text" wire:model.lazy='registro' class="form-control"
-                                placeholder="Regisrro">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='registro' class="form-control" placeholder="Registro">
+                            <label for="">Registro</label>
                         </div>
                         @error('registro')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="responsable"><i
-                                    class="fa-solid fa-pen-to-square"></i></span>
-                            <input type="text" wire:model.lazy='responsable' class="form-control"
-                                placeholder="Responsable">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='responsable' class="form-control" placeholder="Responsable">
+                            <label for="">Responsable</label>
                         </div>
-                        @error('reposable')
+                        @error('responsable') <!-- Corrige el nombre aquí -->
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="giro"><i
-                                    class="fa-solid fa-pen-to-square"></i></span>
+                        <div class="form-floating form-floating-outline">
                             <input type="text" wire:model.lazy='giro' class="form-control" placeholder="Giro">
+                            <label for="">Giro</label>
                         </div>
                         @error('giro')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="tipoContribuyente"><i
-                                    class="fa-solid fa-pen-to-square"></i></span>
-                            <input type="text" wire:model.lazy='tipoContribuyente' class="form-control"
-                                placeholder="Tipo de Contribuyente">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='tipoContribuyente' class="form-control" placeholder="Tipo de Contribuyente">
+                            <label for="">Tipo Contribuyente</label>
                         </div>
                         @error('tipoContribuyente')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <span class="input-group-text" id="correo"><i class="fa-solid fa-envelope"></i></span>
-                            <input type="text" wire:model.lazy='correo' class="form-control"
-                                placeholder="Correo Electronico">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" wire:model.lazy='correo' class="form-control" placeholder="Correo Electronico">
+                            <label for="">Correo Electronico</label>
                         </div>
-                        @error('tipoContribuyente')
+                        @error('correo')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
                         <div class="input-group" wire:ignore>
                             <label class="input-group-text" for="inputGroupSelect01">Actividad Economica</label>
-                            <select class="select2 form-select form-select-lg text-uppercase" id="select2-Actiempresa"
-                                wire:model.lazy='actividad'>
-                                <option selected="">Elegir...</option>
-                                @foreach ($actividades as $actividad)
-                                    <option value="{{ $actividad->id }}">{{ $actividad->codigo }}
-                                        {{ $actividad->valor }}</option>
-                                @endforeach
+                            <select id="select2ActiEmpresa" class="select2 form-select form-select-lg select2-hidden-accessible" data-allow-clear="true" data-select2-id="select2ActiEmpresa" tabindex="-1" aria-hidden="true" wire:model.lazy='actividad' style="width: 100%;">
+                                <option selected="">Elegir... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
+                                @forelse ($actividades as $ac)
+                                    <option value="{{ $ac->id }}">{{ $ac->codigo }} {{ $ac->valor }}</option>
+                                @empty
+                                    <option>No hay actividades disponibles</option> <!-- Añadir opción vacía -->
+                                @endforelse
                             </select>
                         </div>
                         <span>{{ $actividadSelectName }}</span>
@@ -124,8 +112,7 @@
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-4 mb-3">
-                        <select class="form-select" wire:model.lazy='depto' wire:click='updateDepto'
-                            wire:change="updateDepto()">
+                        <select class="form-select" wire:model.lazy='depto' wire:click='updateDepto' wire:change="updateDepto()">
                             <option selected="">Elegir Departamento...</option>
                             @foreach ($departamentos as $depto)
                                 <option value="{{ $depto->id }}">{{ $depto->departamento }}</option>
@@ -136,8 +123,7 @@
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-4 mb-3">
-                        <select class="form-select" wire:model.lazy='muni' wire:click='updateMuni'
-                            wire:change="updateMuni()">
+                        <select class="form-select" wire:model.lazy='muni' wire:click='updateMuni' wire:change="updateMuni()">
                             <option selected="">Elegir Municipio...</option>
                             @foreach ($municipios as $muni)
                                 <option value="{{ $muni->id }}">{{ $muni->municipio }}</option>
@@ -159,9 +145,8 @@
                         @enderror
                     </div>
                     <div class="col-sm-12 col-md-12 mb-3">
-                        <div class="input-group input-group-merge">
-                            <input type="file" class="form-control custom-file-input" wire:model="image"
-                                accept="image/x-png, image/x-gif, image/x-jpeg">
+                        <div class="form-floating form-floating-outline">
+                            <input type="file" class="form-control custom-file-input" wire:model="image" accept="image/x-png, image/x-gif, image/x-jpeg">
                         </div>
                         <label class="custom-file-label">Imagen {{ $image }}</label>
                         @error('image')

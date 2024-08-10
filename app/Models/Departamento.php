@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UnidadMedida extends Model
+class Departamento extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'codigo',
-        'valor',
+        'departamento',
         'status',
     ];
 
@@ -22,16 +22,16 @@ class UnidadMedida extends Model
         'deleted_at' => 'datetime',
     ];
 
-
+    /**
+     * Departamento::activo()->get() para obtener todos los departamentos activos.
+     */
     public function scopeActivo($query)
     {
         return $query->where('status', 'Activo');
     }
 
-
     public function scopeDesactivado($query)
     {
         return $query->where('status', 'Desactivado');
     }
-
 }

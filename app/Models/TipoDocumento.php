@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UnidadMedida extends Model
+class TipoDocumento extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -28,10 +28,8 @@ class UnidadMedida extends Model
         return $query->where('status', 'Activo');
     }
 
-
     public function scopeDesactivado($query)
     {
         return $query->where('status', 'Desactivado');
     }
-
 }

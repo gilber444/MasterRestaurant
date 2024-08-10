@@ -3,12 +3,13 @@
 namespace App\Livewire;
 
 use App\Models\ActividadEconomica;
-use App\Models\Departamentos;
+use App\Models\Departamento;
 use App\Models\Distritos;
 use App\Models\Empresas as Empresa;
-use App\Models\Municipios;
+use App\Models\Municipio;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -18,8 +19,10 @@ class Empresas extends Component
     use WithPagination;
     use WithFileUploads;
 
-    public $search, $selected_id, $pageTitle, $modalAction, $componentName, $empresa, $razon, $direccion, $pagination = 10,
-    $departamento, $municipio, $distrito, $correo,$telefono, $responsable, $registro, $giro, $nit, $actividad, $tipoContribuyente, $image, $actividadSelectName;
+    public $pagination = 10;
+    public $search, $selected_id, $pageTitle, $modalAction, $componentName, $empresa, $direccion, $telefono, $responsable, $registro, $giro, $nit, $tipoContribuyente, $image, $razon, $actividadSelectId, $actividadSelectName, $actividad, $depto, $muni, $distrito, $correo, $municipios = [], $distritos = [];
+
+
 
     public function mount()
     {
@@ -29,39 +32,47 @@ class Empresas extends Component
 
     public function render()
     {
-        $empresas = Empresa::with(['actividadEconomicas', 'departamento', 'municipio', 'distrito'])
+        $empresas = Empresa::with(['actividadEconomicas', 'departamentos', 'municipios', 'distritos'])
         ->when(strlen($this->search) > 0, function ($query) {
             $query->where('empresa', 'like', '%' . $this->search . '%');
         })
         ->orderBy('empresa', 'asc')
         ->paginate($this->pagination);
 
-        
-        $actividades = ActividadEconomica::orderBy('valor', 'asc')->get();
-        $departamentos = Departamentos::orderBy('departamento', 'asc')->get() ;
-        $municipios = Municipios::orderBy('municipio', 'asc')->get();
-        $distritos = Distritos::orderBy('distrito', 'asc')->get();
 
-        return view('livewire.empresas.empresas', ['empresas' => $empresas, 'actividades' => $actividades, 'departamentos' => $departamentos, 'municipios' => $municipios, 'distritos' => $distritos]);
-        //return view('livewire.empresas.empresas', ['empresas' => $empresas,  ,
-        //,  ,
-        // ]);
+        $actividades = ActividadEconomica::orderBy('valor', 'asc')->get() ?? collect();
+    $departamentos = Departamento::orderBy('departamento', 'asc')->get() ?? collect();
+    $municipios = Municipio::orderBy('municipio', 'asc')->get() ?? collect();
+    $distritos = Distritos::orderBy('distrito', 'asc')->get() ?? collect();
+
+        return view('livewire.empresas.empresas', [
+            'empresas' => $empresas,
+            'actividades' => $actividades,
+            'departamentos' => $departamentos,
+            'municipios' => $municipios,
+            'distritos' => $distritos
+        ]);
+
     }
 
     protected function rules()
     {
-        $rules = [
-            'empresa' => 'required|min:2|unique:empresas,empresa',
+        $id = $this->selected_id ? $this->selected_id : null;
+
+        return [
+            'empresa' => [
+                'required',
+                'min:2',
+                $id ? Rule::unique('empresas', 'empresa')->ignore($id) : 'unique:empresas,empresa'
+            ],
             'razon' => 'required|min:3',
             'registro' => 'required',
-            'actividad' => 'required|not_in:Elegir Actividad Economica',
-            'departamento' => 'required|not_in:Elegir Departamento',
-            'municipio' => 'required|not_in:Elegir Municipio',
+            'actividadSelectId' => 'required|not_in:Elegir Actividad Economica',
+            'depto' => 'required|not_in:Elegir Departamento',
+            'muni' => 'required|not_in:Elegir Municipio',
             'distrito' => 'required|not_in:Elegir Distrito',
             'nit' => 'required'
         ];
-
-        return $rules;
     }
 
     protected function messages()
@@ -73,9 +84,9 @@ class Empresas extends Component
         'razon.required' => 'La razon social es Requerido',
         'razon.min' => 'La razon social debe tener al menos dos caracteres',
         'registro.required' => 'El numero de registro es Requerido',
-        'actividad.not_in' => 'La actividad economica es Requerida',
-        'departamento.not_in' => 'El departamento es Requerido',
-        'municipio.not_in' => 'El municipio es Requerido',
+        'actividadSelectId.not_in' => 'La actividad economica es Requerida',
+        'depto.not_in' => 'El departamento es Requerido',
+        'muni.not_in' => 'El municipio es Requerido',
         'distrito.not_in' => 'El distrito es Requerido',
         'nit.required' => 'El numero de NIT es requerido'
         ];
@@ -83,23 +94,25 @@ class Empresas extends Component
 
     public function Store()
     {
+        //dd($this->actividadSelectId);
         $this->validate($this->rules(), $this->messages());
 
-        $empe = Empresas::create([
+        $empe = Empresa::create([
             'empresa' => $this->empresa,
             'razon' => $this->razon,
             'direccion' => $this->direccion,
             'telefono' => $this->telefono,
             'responsable' => $this->responsable,
             'registro' => $this->registro,
-            'giro' => $this->giro,
+            'giro' => $this->actividadSelectName,
             'nit' => $this->nit,
-            'actividad' => $this->actividad,
-            'departamento' => $this->departamento,
-            'municipio' => $this->municipio,
-            'distrito' => $this->distrito,
-            'correo' => $this->correo,
             'tipoContribuyente' => $this->tipoContribuyente,
+            'actividad' => $this->actividadSelectId,
+            'desActividad' => $this->actividadSelectName,
+            'correo' => $this->correo,
+            'departamento' => $this->depto,
+            'municipio' => $this->muni,
+            'distrito' => $this->distrito
         ]);
 
         if($this->image)
@@ -115,23 +128,24 @@ class Empresas extends Component
         $this->dispatch('close-modal');
     }
 
-    public function Edit(Empresas $empresa)
+    public function Edit(Empresa $empresa)
     {
         $this->selected_id = $empresa->id;
         $this->empresa = $empresa->empresa;
-        $this->razon = $empresa->razon;
         $this->direccion = $empresa->direccion;
         $this->telefono = $empresa->telefono;
         $this->responsable = $empresa->responsable;
         $this->registro = $empresa->registro;
         $this->giro = $empresa->giro;
         $this->nit = $empresa->nit;
-        $this->actividad = $empresa->actividad;
-        $this->departamento = $empresa->departamento;
-        $this->municipio = $empresa->municipio;
-        $this->distrito = $empresa->distrito;
-        $this->correo = $empresa->correo;
         $this->tipoContribuyente = $empresa->tipoContribuyente;
+        $this->razon = $empresa->razon;
+        $this->actividadSelectId = $empresa->actividad;
+        $this->actividadSelectName = $empresa->desActividad;
+        $this->correo = $empresa->correo;
+        $this->depto = $empresa->departamento;
+        $this->muni = $empresa->municipio;
+        $this->distrito = $empresa->distrito;
 
         $this->dispatch('open-modal');
     }
@@ -140,21 +154,22 @@ class Empresas extends Component
     {
         $this->validate($this->rules(), $this->messages());
 
-        $empresas = Empresas::find($this->selected_id);
+        $empresas = Empresa::find($this->selected_id);
         $empresas->empresa = $this->empresa;
         $empresas->razon = $this->razon;
         $empresas->direccion = $this->direccion;
         $empresas->telefono = $this->telefono;
         $empresas->responsable = $this->responsable;
         $empresas->registro = $this->registro;
-        $empresas->giro = $this->giro;
+        $empresas->giro = $this->actividadSelectName;
         $empresas->nit = $this->nit;
-        $empresas->actividad = $this->actividad;
-        $empresas->departamento = $this->departamento;
-        $empresas->municipio = $this->municipio;
-        $empresas->distrito = $this->distrito;
-        $empresas->correo = $this->correo;
         $empresas->tipoContribuyente = $this->tipoContribuyente;
+        $empresas->correo=$this->correo;
+        $empresas->departamento = $this->depto;
+        $empresas->municipio = $this->muni;
+        $empresas->distrito = $this->distrito;
+        $empresas->actividad =$this->actividadSelectId;
+        $empresas->desActividad = $this->actividadSelectName;
         $empresas->save();
 
         //dd($this->image);
@@ -182,15 +197,8 @@ class Empresas extends Component
     #[On('destroy')]
     public function destroy($id)
     {
-        $sucursalesCount = Empresas::find($id)->sucursales->count();
 
-        if($sucursalesCount > 0)
-        {
-            $this->dispatch('noty', 'No se puede eliminar la empresa porque tiene sucursales asociadas');
-            return;
-        }
-
-        Empresas::find($id)->delete();
+        Empresa::find($id)->delete();
         $this->dispatch('noty', msg: 'Empresa eliminada con exito');
         $this->resetUI();
     }
@@ -205,25 +213,36 @@ class Empresas extends Component
         $this->registro = '';
         $this->giro = '';
         $this->nit = '';
-        $this->correo = '';
-        $this->departamento = 'Elegir Departamento';
-        $this->municipio = 'Elegir Municipio';
-        $this->distrito = 'Elegir distrito';
-        $this->actividad = 'Elegir Actividad Economica';
         $this->tipoContribuyente = '';
         $this->image = '';
         $this->search = '';
         $this->selected_id = 0;
+        $this->depto = '';
+        $this->muni = '';
+        $this->distrito = '';
+        $this->correo = '';
+        $this->actividadSelectId='';
+        $this->actividadSelectName = '';
         $this->resetValidation();
         $this->resetPage();
     }
 
-    public function renderImagen($filename)
+    public function renderImage($filename)
     {
         $path = 'public/empresas/' . $filename;
         if (!Storage::exists($path)) {
             abort(404);
         }
         return response()->file(storage_path("app/{$path}"));
+    }
+
+    public function updateDepto()
+    {
+        $this->municipios = Municipio::where('departamento', $this->depto)->get();
+    }
+
+    public function updateMuni()
+    {
+        $this->distritos = Distritos::where('municipio', $this->muni)->get();
     }
 }

@@ -50,16 +50,16 @@ class Empresas extends Model
 
     public function departamentos()
     {
-        return $this->belongsTo(Departamentos::class, 'departamento');
+        return $this->belongsTo(Departamento::class, 'departamento');
     }
 
 
     public function municipios()
     {
-        return $this->belongsTo(Municipios::class, 'municipio');
+        return $this->belongsTo(Municipio::class, 'municipio');
     }
 
-    
+
     public function distritos()
     {
         return $this->belongsTo(Distritos::class, 'distrito');
