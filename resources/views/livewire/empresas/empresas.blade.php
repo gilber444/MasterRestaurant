@@ -39,18 +39,16 @@
                     <td>{{ $empresa->giro }}</td>
                     <td class="text-center">
                         @can('Empresas_Update')
-                        <a class="btn btn-warning" href="javascript:void(0);" wire:click="Edit('{{$empresa->id}}')"><i class="bx bx-edit-alt"></i>Editar</a>
+                        <button class="btn rounded-pill btn-icon btn-outline-warning waves-effect btn-sm" wire:click="Edit({{ $empresa->id }})"><i class="ri-edit-box-line"></i></button>
                         @endcan
                         @can('Empresas_Destroy')
-                        <a class="btn btn-danger" href="javascript:void(0);" onclick="confirmDestroy('{{$empresa->id}}')"><i class="bx bx-trash"></i>Eliminar</a>
+                        <a href="#" onclick="confirmDestroy({{ $empresa->id }})" class="btn rounded-pill btn-icon btn-outline-danger waves-effect btn-sm"><i class="ri-delete-bin-line"></i></a>
                         @endcan
-
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
-
     </div>
     {{$empresas->links()}}
     @include('livewire.empresas.form')

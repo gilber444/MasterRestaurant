@@ -124,7 +124,7 @@ class Empresas extends Component
         }
 
         $this->dispatch('noty', msg: 'Empresa registrada con exito');
-        $this->resetUI();
+        $this->ResetInt();
         $this->dispatch('close-modal');
     }
 
@@ -190,7 +190,7 @@ class Empresas extends Component
         }
 
         $this->dispatch('noty', msg: 'Empresa Actualizada con exito');
-        $this->resetUI();
+        $this->ResetInt();
         $this->dispatch('close-modal');
     }
 
@@ -200,10 +200,10 @@ class Empresas extends Component
 
         Empresa::find($id)->delete();
         $this->dispatch('noty', msg: 'Empresa eliminada con exito');
-        $this->resetUI();
+        $this->ResetInt();
     }
 
-    public function resetUI()
+    public function ResetInt()
     {
         $this->empresa = '';
         $this->razon = '';

@@ -50,6 +50,22 @@
         }).showToast();
     });
 
+    // Manejador para notificaciones de error
+    window.addEventListener('noty-error', event => {
+        Toastify({
+            text: event.detail.msg,
+            duration: 4000,
+            gravity: 'bottom',
+            style: {
+                background: "linear-gradient(to right, #dc3545, #c82333)", // Rojo de Bootstrap danger
+                color: "#ffffff", // Texto en blanco
+                borderRadius: "8px", // Esquinas redondeadas
+                padding: "10px 20px", // Padding adicional
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", // Sombra para profundidad
+            },
+        }).showToast();
+    });
+
     window.addEventListener('close-modal', () => {
         $('#MyModal').modal('hide'); // Asegúrate de reemplazar `yourModalId` con el ID de tu modal
     });
@@ -76,5 +92,11 @@
             }
         });
     }
-</script>
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('input, textarea, input[type="email"], input[type="date"]');
+        elements.forEach(element => {
+            element.setAttribute('autocomplete', 'off');
+        });
+    });
+</script>

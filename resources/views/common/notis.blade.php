@@ -1,3 +1,5 @@
+@include('common.notiJavier')
+@include('common.notiRicardo')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         $('select2ActiEmpresa').select2()

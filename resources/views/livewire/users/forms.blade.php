@@ -114,7 +114,13 @@
                                 <span class="text-danger er">{{ $message }}</span>
                             @enderror
                         </div>
-
+                        @if ($image)
+                            <div class="avatar pull-up" data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="{{ $image->getClientOriginalName() }}">
+                                <img src="{{ $image->temporaryUrl() }}" alt="{{ $image->getClientOriginalName() }}" class="rounded-circle" width="38" height="38">
+                            </div>
+                        @else
+                            <p>Sin imágen</p>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -9,15 +9,13 @@
                 , Tecnologias Megabit, Sysprossv
             </div>
             <div class="d-none d-lg-inline-block">
-                <a href="#" class="footer-link me-4">Master Restaurant</a>
-                {{--
                     @php
                         $empresa =DB::table('empresas')->first();
                     @endphp
                     @if ($empresa)
-                        {{ $empresa->razon }}
+                    <a href="#" class="footer-link me-4">{{ $empresa->razon }}</a>
                     @endif
-                --}}
+
                 <a href="#"  class="footer-link d-none d-sm-inline-block">V 1.0</a>
             </div>
         </div>

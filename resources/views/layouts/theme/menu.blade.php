@@ -42,8 +42,9 @@
     @endcan
     @can('AdminEmpresas_Index')
         <li class="menu-item
-            {{ Request::is('empresa') ? 'active' : '' }}"
-            >
+            {{ Request::is('empresa') ? 'active' : '' }}
+            {{ Request::is('sucursal') ? 'active' : '' }}
+            {{ Request::is('parametro') ? 'active' : '' }}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons ri-building-line"></i>
                 <div data-i18n="Admin Empresas">Admin Empresas</div>
@@ -57,7 +58,7 @@
                     </li>
                 @endcan
                 @can('Sucursales_Index')
-                    <li class="menu-item {{ Request::is('sucual') ? 'active' : '' }}">
+                    <li class="menu-item {{ Request::is('sucursal') ? 'active' : '' }}">
                         <a href="{{ route('sucursal') }}" class="menu-link">
                             <div data-i18n="Sucursales">Sucursales</div>
                         </a>

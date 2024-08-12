@@ -192,6 +192,14 @@ class Users extends Component
 
         $user->save();
 
+        if($this->image)
+        {
+            $customFileName = uniqid() . '_.' . $this->image->extension();
+            $this->image->storeAs('public/users', $customFileName);
+            $user->image = $customFileName;
+            $user->save();
+        }
+
         $this->dispatch('noty', msg: 'USUARIO ACTUALIZADO CON ÉXITO');
         $this->ResetInt();
         $this->dispatch('close-modal');

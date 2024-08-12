@@ -11,11 +11,6 @@
                 <div data-i18n="Productos">Productos</div>
             </a>
         </li>
-        <li class="menu-item {{ Request::is('precios') ? 'active' : '' }}">
-            <a href="{{ route('productos') }}" class="menu-link">
-                <div data-i18n="Precios">Precios</div>
-            </a>
-        </li>
         <li class="menu-item {{ Request::is('categorias') ? 'active' : '' }}">
             <a href="{{ route('productos') }}" class="menu-link">
                 <div data-i18n="Categorias">Categorias</div>

@@ -6,7 +6,7 @@
                 <div class="row">
                     <div class="col-sm-12 col-md-8 mb-3">
                         <div class="form-floating form-floating-outline">
-                            <input type="text" wire:model.lazy='empresa' class="form-control" placeholder="Nombre de la empresa">
+                            <input type="text" wire:model.lazy='empresa' class="form-control" placeholder="Nombre de la empresa" autocomplete="false">
                             <label for="">Empresa</label>
                         </div>
                         @error('empresa')
@@ -15,7 +15,7 @@
                     </div>
                     <div class="col-sm-12 col-md-4 mb-3">
                         <div class="form-floating form-floating-outline">
-                            <input type="text" wire:model.lazy='telefono' class="form-control" placeholder="Telefono">
+                            <input type="text" wire:model.lazy='telefono' class="form-control" placeholder="Telefono" autocomplete="false">
                             <label for="">Telefono</label>
                         </div>
                         @error('telefono')
@@ -148,7 +148,15 @@
                         <div class="form-floating form-floating-outline">
                             <input type="file" class="form-control custom-file-input" wire:model="image" accept="image/x-png, image/x-gif, image/x-jpeg">
                         </div>
-                        <label class="custom-file-label">Imagen {{ $image }}</label>
+                        <div class="d-flex align-items-center avatar-group">
+                            @if ($image)
+                                <div class="avatar pull-up" data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="{{ $image->getClientOriginalName() }}">
+                                    <img src="{{ $image->temporaryUrl() }}" alt="{{ $image->getClientOriginalName() }}" class="rounded-circle" width="38" height="38">
+                                </div>
+                            @else
+                                <p>Sin imágen</p>
+                            @endif
+                        </div>
                         @error('image')
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror

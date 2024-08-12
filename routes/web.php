@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     //Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     //Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     //Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/dashboard/{imagen}', [Users::class, 'renderImagen'])->name('dashboard.mostrar');
     Route::get('roles', Roles::class)->name('roles')->can('Roles_Index');
     Route::get('asignar', AsignarPermisos::class)->name('asignar')->can('Asignar_Permisos');
     Route::get('users', Users::class)->name('users')->can('Usuarios_Index');

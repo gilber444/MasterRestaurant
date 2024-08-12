@@ -445,8 +445,11 @@
                                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);"
                                     data-bs-toggle="dropdown">
                                     <div class="avatar avatar-online">
-                                        <img src="../../assets/img/avatars/1.png" alt
-                                            class="w-px-40 h-auto rounded-circle" />
+                                        @if (Auth::user()->image != null)
+                                            @if (Auth::check())
+                                                <img src="{{ route('user.mostrar', ['imagen' => Auth::user()->image]) }}" alt="Imagen" class=" w-px-40 h-auto rounded-circle">
+                                            @endif
+                                        @endif
                                     </div>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
@@ -455,13 +458,24 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-shrink-0 me-2">
                                                     <div class="avatar avatar-online">
-                                                        <img src="../../assets/img/avatars/1.png" alt
-                                                            class="w-px-40 h-auto rounded-circle" />
+                                                        @if (Auth::user()->image != null)
+                                                            @if (Auth::check())
+                                                                <img src="{{ route('user.mostrar', ['imagen' => Auth::user()->image]) }}" alt="Imagen" class=" w-px-40 h-auto rounded-circle">
+                                                            @endif
+                                                        @endif
                                                     </div>
                                                 </div>
                                                 <div class="flex-grow-1">
-                                                    <h6 class="mb-0 small">John Doe</h6>
-                                                    <small class="text-muted">Admin</small>
+                                                    <h6 class="mb-0 small">
+                                                        @if (Auth::check())
+                                                            {{ Auth::user()->name }}
+                                                        @endif
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        @if (Auth::check())
+                                                            {{ Auth::user()->profile }}
+                                                        @endif
+                                                    </small>
                                                 </div>
                                             </div>
                                         </a>

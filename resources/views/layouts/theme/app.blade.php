@@ -8,7 +8,14 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>Dashboard - Analytics | Materio - Bootstrap Material Design Admin Template</title>
+    <title>
+        @php
+            $empresa = DB::table('empresas')->first();
+        @endphp
+        @if ($empresa)
+            {{$empresa->razon}}
+        @endif
+    </title>
 
     <meta name="description" content="" />
     @livewireStyles
