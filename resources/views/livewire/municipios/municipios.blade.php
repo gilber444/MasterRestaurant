@@ -37,7 +37,7 @@
                                 <tr>
                                     <td class="text-center">{{ $muni->codigo }}</td>
                                     <td class="text-center">{{ $muni->municipio }}</td>
-                                    <td class="text-center"> {{ $muni->depto }}</td>
+                                    <td class="text-center"> {{ $muni->departamentos->departamento }}</td>
                                     <td class="text-center">
                                         @if($muni->status === 'Activo')
                                             <span class="badge bg-label-success rounded-pill">Active</span>

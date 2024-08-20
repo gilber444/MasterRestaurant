@@ -215,6 +215,7 @@ class Users extends Component
         $this->dispatch('noty', msg: 'USUARIO ELIMINADO CON ÉXITO');
     }
 
+    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->name = '';

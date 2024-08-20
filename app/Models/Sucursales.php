@@ -29,14 +29,14 @@ class Sucursales extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function empresas()
+    public function Rempresa()
     {
-        return $this->belongsTo(Empresas::class, 'empresa_id');
+        return $this->belongsTo(Empresas::class, 'empresa');
     }
 
     public function tipoEstablecimientos()
     {
-        return $this->belongsTo(TipoEstablecimiento::class, 'tipo_id');
+        return $this->belongsTo(TipoEstablecimiento::class, 'tipo');
     }
 
     public function departamentos()

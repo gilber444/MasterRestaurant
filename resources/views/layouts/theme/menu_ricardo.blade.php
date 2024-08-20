@@ -11,13 +11,13 @@
                 <div data-i18n="Productos">Productos</div>
             </a>
         </li>
-        <li class="menu-item {{ Request::is('categorias') ? 'active' : '' }}">
-            <a href="{{ route('productos') }}" class="menu-link">
+        <li class="menu-item {{ Request::is('productosCategorias') ? 'active' : '' }}">
+            <a href="{{ route('productosCategorias') }}" class="menu-link">
                 <div data-i18n="Categorias">Categorias</div>
             </a>
         </li>
-        <li class="menu-item {{ Request::is('uminterno') ? 'active' : '' }}">
-            <a href="{{ route('productos') }}" class="menu-link">
+        <li class="menu-item {{ Request::is('productosUnidadMedidas') ? 'active' : '' }}">
+            <a href="{{ route('productosUnidadMedidas') }}" class="menu-link">
                 <div data-i18n="Unidad de Medida">Unidad de Medida</div>
             </a>
         </li>

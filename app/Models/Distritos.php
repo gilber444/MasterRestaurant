@@ -26,7 +26,7 @@ class Distritos extends Model
 
     public function municipios()
     {
-        return $this->belongsTo(Municipios::class, 'municipio');
+        return $this->belongsTo(Municipio::class, 'municipio');
     }
 
 
@@ -35,7 +35,6 @@ class Distritos extends Model
         return $query->where('status', 'Activo');
     }
 
-   
     public function scopeDesactivado($query)
     {
         return $query->where('status', 'Desactivado');

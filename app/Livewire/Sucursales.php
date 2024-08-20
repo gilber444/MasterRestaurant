@@ -125,6 +125,7 @@ class Sucursales extends Component
         $this->dispatch('open-modal');
     }
 
+    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->empresa = '';

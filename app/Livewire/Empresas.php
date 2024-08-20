@@ -63,7 +63,7 @@ class Empresas extends Component
             'empresa' => [
                 'required',
                 'min:2',
-                $id ? Rule::unique('empresas', 'empresa')->ignore($id) : 'unique:empresas,empresa'
+                Rule::unique('empresas', 'empresa')->ignore($id),
             ],
             'razon' => 'required|min:3',
             'registro' => 'required',
@@ -71,26 +71,41 @@ class Empresas extends Component
             'depto' => 'required|not_in:Elegir Departamento',
             'muni' => 'required|not_in:Elegir Municipio',
             'distrito' => 'required|not_in:Elegir Distrito',
-            'nit' => 'required'
+            'nit' => [
+                'required',
+                Rule::unique('empresas', 'nit')->ignore($id),
+                'numeric',
+                'regex:/^\d{8}$|^\d{14}$/', // Acepta solo 8 o 14 dígitos
+            ]
         ];
     }
 
     protected function messages()
     {
         return [
-        'empresa.required' => 'El nombre de la empresa es requerido',
-        'empresa.unique' => 'La empresa ya existe',
-        'empresa.min' => 'La empresa debe tener al menos dos caracteres',
-        'razon.required' => 'La razon social es Requerido',
-        'razon.min' => 'La razon social debe tener al menos dos caracteres',
-        'registro.required' => 'El numero de registro es Requerido',
-        'actividadSelectId.not_in' => 'La actividad economica es Requerida',
-        'depto.not_in' => 'El departamento es Requerido',
-        'muni.not_in' => 'El municipio es Requerido',
-        'distrito.not_in' => 'El distrito es Requerido',
-        'nit.required' => 'El numero de NIT es requerido'
+            'empresa.required' => 'El nombre de la empresa es requerido',
+            'empresa.unique' => 'La empresa ya existe',
+            'empresa.min' => 'La empresa debe tener al menos dos caracteres',
+            'razon.required' => 'La razón social es requerida',
+            'razon.min' => 'La razón social debe tener al menos dos caracteres',
+            'registro.required' => 'El número de registro es requerido',
+            'actividadSelectId.not_in' => 'La actividad económica es requerida',
+            'depto.not_in' => 'El departamento es requerido',
+            'muni.not_in' => 'El municipio es requerido',
+            'distrito.not_in' => 'El distrito es requerido',
+            'nit.required' => 'El número de NIT es requerido',
+            'nit.unique' => 'El número de NIT ya existe',
+            'nit.digits' => 'El número de NIT debe tener exactamente 14 dígitos',
+            'nit.numeric' => 'El número de NIT solo puede contener números',
+            'dui.required' => 'El número de DUI es requerido',
+            'dui.unique' => 'El número de DUI ya existe',
+            'dui.digits' => 'El número de DUI debe tener exactamente 8 dígitos',
+            'dui.numeric' => 'El número de DUI solo puede contener números',
+            'correo.required' => 'El correo electrónico es requerido',
+            'correo.email' => 'El correo electrónico debe tener un formato válido',
         ];
     }
+
 
     public function Store()
     {
@@ -203,6 +218,7 @@ class Empresas extends Component
         $this->ResetInt();
     }
 
+    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->empresa = '';

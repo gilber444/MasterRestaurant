@@ -31,6 +31,7 @@
                                 <th class="text-center">Marca</th>
                                 <th class="text-center">UM Interno</th>
                                 <th class="text-center">UM Hacienda</th>
+                                <th class="text-center">Activo</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -44,10 +45,17 @@
                                     </td>
                                     <td class="text-center" style="font-size: 0.8rem;">{{ $producto->codigo_barra }}</td>
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->producto }}</td>
-                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->categoria }}</td>
+                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RcategoriaProducto->categoria}}</td>
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->marca }}</td>
-                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->unidad_medida }}</td>
-                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->unidadMedidaMH->valor  }}</td>
+                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RunidadMedida->nombre }}</td>
+                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RunidadMedidaMH->valor  }}</td>
+                                    <td class="text-center">
+                                        @if($producto->presentacion == '1')
+                                            <span class="badge bg-label-success rounded-pill">Si</span>
+                                        @else
+                                            <span class="badge bg-label-danger rounded-pill">No</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-pill gap-3" role="group" >
                                             @can('Productos_Update')

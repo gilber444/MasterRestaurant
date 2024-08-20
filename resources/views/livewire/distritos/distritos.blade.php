@@ -37,7 +37,7 @@
                                 <tr>
                                     <td class="text-center">{{ $dis->codigo }}</td>
                                     <td class="text-center">{{ $dis->distrito }}</td>
-                                    <td class="text-center"> {{ $dis->muni }}</td>
+                                    <td class="text-center"> {{ $dis->municipios->municipio }}</td>
                                     <td class="text-center">
                                         @if($dis->status === 'Activo')
                                             <span class="badge bg-label-success rounded-pill">Active</span>

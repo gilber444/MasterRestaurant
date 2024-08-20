@@ -98,5 +98,12 @@
         elements.forEach(element => {
             element.setAttribute('autocomplete', 'off');
         });
+
+        /////////para cerrar limpiar los inputs cuando se le da click fuera de la modal//////////////////
+        var modalElement = document.getElementById('MyModal'); // Cambia 'myModal' por el ID de tu modal
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            Livewire.dispatch('ResetInt');
+        });
     });
 </script>

@@ -132,6 +132,7 @@ class Parametros extends Component
         $this->dispatch('close-modal');
     }
 
+    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->selected_id = '';

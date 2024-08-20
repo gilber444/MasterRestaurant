@@ -207,5 +207,14 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalElement = document.getElementById('MyModal'); // Cambia 'myModal' por el ID de tu modal
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            Livewire.dispatch('ResetInt');
+        });
+    });
+</script>
 
 

@@ -86,9 +86,11 @@
                                     <label class="input-group-text" for="inputGroupSelect01">Categorias De Productos</label>
                                     <select wire:model.lazy="categoria" class="form-select" data-allow-clear="true" tabindex="-1" aria-hidden="true">
                                         <option value="" >Seleccionar Categoria</option>
-                                        <option value="Carnes & Otros">Carnes & Otros</option>
-                                        <option value="Granos Basicos">Granos Basicos</option>
-                                        <option value="Bebidas & Lacteos">Bebidas & Lacteos</option>
+                                        @forelse ($categorias as $cat)
+                                            <option value="{{ $cat->id }}" >{{ $cat->categoria }}</option>
+                                        @empty
+                                            <option value=""></option>
+                                        @endforelse
                                     </select>
 
                                     @error('categoria')
@@ -100,8 +102,8 @@
                                     <label class="input-group-text" for="inputGroupSelect01">UM Interno</label>
                                     <select wire:model.lazy="unidad_medida" class="form-select " data-allow-clear="true" tabindex="-1" aria-hidden="true">
                                         <option value="" >Seleccionar Unidad</option>
-                                        @forelse ($unidades as $uni)
-                                            <option value="{{ $uni->id }}" >{{ $uni->valor }}</option>
+                                        @forelse ($unidadesInterno as $uni)
+                                            <option value="{{ $uni->id }}" >{{ $uni->nombre }}</option>
                                         @empty
                                             <option value=""></option>
                                         @endforelse
@@ -128,7 +130,7 @@
                                     @enderror
                                 </div>
 
-                                <div class="input-group mb-5">
+                                <div class="input-group mb-5 w-50">
                                     <label class="custom-file-label mb-2" style="font-size: 13px">Imagen del producto: {{ $image }}</label>
                                     <div class="input-group input-group-merge">
                                         <input type="file" id="imageInput" class="form-control custom-file-input" wire:model="image"
@@ -140,8 +142,21 @@
                                     @enderror
                                 </div>
 
+                                <div class="input-group mb-5 w-50" style="margin-top: 1.62rem;">
+                                    <label class="input-group-text" for="inputGroupSelect01">Activo</label>
+                                    <select wire:model.lazy="presentacion" class="form-select" data-allow-clear="true" tabindex="-1" aria-hidden="true">
+                                        <option value="">Seleccionar estado</option>
+                                        <option value="1">Si</option>
+                                        <option value="0">No</option>
+                                    </select>
+
+                                    @error('presentacion')
+                                        <span class="text-danger er">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
                                 <div class="input-group input-group-merge w-50">
-                                    <input type="text" id="imageChange" wire:model.lazy="imageChange" class="form-control" value="" >
+                                    <input type="text" id="imageChange" wire:model.lazy="imageChange" class="form-control" value="" style="display: none;" >
                                     @error('imageChange')
                                         <span class="text-danger er">{{ $message }}</span>
                                     @enderror
@@ -154,13 +169,27 @@
                             <form class="mt-5">
                                 <h6 class="mb-3">2. Administracion De Precios</h6>
                                 <div class="row mt-2">
+                                    <div class="input-group input-group-merge mb-5" style="width:50%;">
+                                         <span id="basic-icon-default-fullname2" class="input-group-text">
+                                            <i class="ri-formula" style="color: #8e8e8e;"></i>
+                                        </span>
+                                        <div class="form-floating form-floating-outline">
+                                            <input type="text" wire:model.lazy="civa" wire:keydown.enter="actualizarCostoSinIva1" class="form-control" id="basic-icon-default-fullname" placeholder="C/IVA">
+                                            <label for="civa">C/IVA</label>
+
+                                            @error('civa')
+                                                <span class="text-danger er">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
                                     <div class="input-group input-group-merge mb-5" style="width: 50%;">
                                         <span id="basic-icon-default-fullname2" class="input-group-text">
                                             <i class="ri-formula " style="color: #8e8e8e;"></i>
                                         </span>
 
                                         <div class="form-floating form-floating-outline">
-                                            <input type="text" wire:model.lazy="csiva" class="form-control" id="basic-icon-default-fullname" placeholder="C.S/IVA"">
+                                            <input type="text" wire:model.lazy="csiva"  class="form-control" id="basic-icon-default-fullname" placeholder="C.S/IVA">
                                             <label for="csiva">C.S/IVA</label>
 
                                             @error('csiva')
@@ -169,35 +198,51 @@
                                         </div>
                                     </div>
 
-                                    <div class="input-group input-group-merge mb-5" style="width:50%;">
-                                         <span id="basic-icon-default-fullname2" class="input-group-text">
-                                            <i class="ri-formula" style="color: #8e8e8e;"></i>
-                                        </span>
-                                        <div class="form-floating form-floating-outline">
-                                            <input type="text" wire:model.lazy="civa" class="form-control" id="basic-icon-default-fullname" placeholder="C/IVA">
-                                            <label for="civa">C/IVA</label>
 
-                                            @error('civa')
-                                                <span class="text-danger er">{{ $message }}</span>
-                                            @enderror
-                                        </div>
-                                    </div>
                                 </div>
                             </form>
                         @endif 
                     </div>
 
-                    <div class="tab-pane fade" id="form-tabs-social" role="tabpanel">
-                        <form style="display: grid;grid-template-columns: repeat(4,1fr);gap: 2.2rem;">
+                    <div class="tab-pane fade" id="form-tabs-social" role="tabpanel" style="height: 33.6rem;overflow: hidden;overflow-y: auto;padding: 0rem 0rem;">
+                        <form style="display: grid;grid-template-columns: repeat(4,1fr);gap: 1.2rem;padding: 0rem 1rem;"  id="image-gallery">
                             @if($activateNewSection)
-                                @if ($image != null )
                                     @foreach ($allImages as $imageGalery)
-                                        <div class="image-preview" style="background-color: {{ basename($imageGalery) == $image ? '#00cc21' : '#f2f2f2' }};" id="preview-{{ basename($imageGalery) }}">
-                                            <img src="{{ asset($imageGalery) }}" alt="{{ basename($imageGalery) }}" style="max-width: 12rem !important; min-width: 12rem !important; max-height: 12rem !important; min-height: 12rem !important; padding: 1rem; object-fit: cover;" class="w-px-40 h-auto" onclick="highlightImage('{{ basename($imageGalery) }}')">
+                                        <div style=" width: 11.5rem;">
+
+                                            <div 
+                                            class="image-preview {{ basename($imageGalery) == $image ? 'selected-image' : 'no-selected-image' }}" 
+                                            style="background-color: {{ basename($imageGalery) == $image ? '#00cc21' : '#f2f2f2' }};" id="preview-{{ basename($imageGalery) }}"
+                                            >
+                                                <img src="{{ asset($imageGalery) }}" alt="{{ basename($imageGalery) }}" style="max-width: 11.5rem !important; min-width: 11.5rem !important; max-height: 11.5rem !important; min-height: 11.5rem !important; padding: 0.5rem; object-fit: cover;" class="w-px-40 h-auto">
+
+                                                
+                                            </div>
+
+
+                                            @if (basename($imageGalery) != $image)
+                                                <div class="demo-inline-spacing" >
+                                                    <style>
+                                                        .selected-image-b{
+                                                            display: none !important;
+                                                        }
+
+                                                    </style>
+                                                    <button onclick="highlightImage('{{ basename($imageGalery) }}')" type="button" class="btn btn-icon btn-label-primary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}">
+                                                        <span class="tf-icons ri-check-double-line ri-22px"></span>
+                                                    </button>
+
+                                                    <button wire:click.prevent="eliminarImagen('{{ basename($imageGalery) }}')"  type="button" class="btn btn-icon btn-label-secondary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}"  >
+                                                        <i  class="ri-delete-bin-6-line"></i>
+                                                    </button>
+                                                </div>
+                                            @endif
                                         </div>
+
+
                                     @endforeach
                                     
-                                @endif
+
 
 
                             @endif
@@ -215,16 +260,26 @@
                     }
 
                     // Cambiar el fondo de la imagen actualmente seleccionada
-                    document.getElementById(`preview-${imageName}`).style.backgroundColor = '#875BE7';
+                    document.getElementById(`preview-${imageName}`).style.backgroundColor = '#FFB400';
+                        const previouslySelectedElement = document.querySelector('.selected-image');
+                        if (previouslySelectedElement) {
+                            previouslySelectedElement.style.backgroundColor = '#f2f2f2';
+                            previouslySelectedElement.classList.remove('selected-image');
+                        }
+                    let buttonsImg = document.querySelectorAll('.selected-image-b');
+                    console.log()
+                    buttonsImg.forEach(function(button) {
+                        button.style.setProperty('display', 'inline-block', 'important');
+                    });
 
                     // Actualizar la imagen previamente seleccionada
                     previousSelectedImage = imageName;
 
                     // Llenar el input con el nombre de la imagen seleccionada
-                    document.querySelector('input[wire\\:model\\.lazy="presentacion"]').value = imageName;
+                    document.querySelector('input[wire\\:model\\.lazy="imageChange"]').value = imageName;
 
                     // Si necesitas que se actualice en Livewire, dispara un evento de entrada en el input
-                    document.querySelector('input[wire\\:model\\.lazy="presentacion"]').dispatchEvent(new Event('input'));
+                    document.querySelector('input[wire\\:model\\.lazy="imageChange"]').dispatchEvent(new Event('input'));
                 }
 
                 document.addEventListener('DOMContentLoaded', function () {
@@ -248,6 +303,28 @@
                         }
                     });
                 });
+
+                function confirmDestroyImg(imgDelete) {
+                    Swal.fire({
+                        title: '¿CONFIRMAS ELIMINAR EL REGISTRO?',
+                        text: "",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Aceptar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            console.log('ejecutar funcion')
+                            Livewire.dispatch('eliminarImagen', {
+                                imgDelete: imgDelete
+                            });
+                        }
+                    });
+                }
+
+                
             </script>
 
             <div class="modal-footer">

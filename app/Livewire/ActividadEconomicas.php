@@ -51,7 +51,7 @@ class ActividadEconomicas extends Component
     protected function rules()
     {
         $rules = [
-            'codigo' => "required|unique:actividad_economicas,valor,{$this->selected_id}|min:1",
+            'codigo' => "required|unique:actividad_economicas,codigo,{$this->selected_id}|min:1",
             'valor' => "required|unique:actividad_economicas,valor,{$this->selected_id}|min:3",
             'status' => 'required'
         ];
@@ -116,7 +116,8 @@ class ActividadEconomicas extends Component
 
     public function destroy($id)
     {
-        $id->delete();
+        $actividad = ActividadEconomica::find($id);
+        $actividad->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'ACTIVIDAD ECONOMICA ELIMINADA CON ÉXITO');
     }

@@ -3,11 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use App\Livewire\AsignarPermisos;
 use App\Livewire\Empresas;
+use App\Livewire\Kardexs;
 use App\Livewire\Parametros;
 use App\Livewire\Roles;
 use App\Livewire\Sucursales;
 use App\Livewire\Users;
-use App\Models\Empresas as ModelsEmpresas;
+use App\Livewire\Inventarios;
 use Illuminate\Support\Facades\Route;
 
 
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/empresa/{imagen}', [Empresas::class, 'renderImage'])->name('empresas.mostrar')->can('Empresas_Index');
     Route::get('sucursal', Sucursales::class)->can('Sucursales_Index')->name('sucursal');
     Route::get('parametro', Parametros::class)->can('Sucursales_Index')->name('parametro');
+    Route::get('kardex', Kardexs::class)->can('Kardex_Index')->name('kardex');
+    Route::get('inventario', Inventarios::class)->can('Inventarios_Index')->name('inventario');
 });
 
 require __DIR__.'/auth.php';

@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\IdentificacionReceptor;
+use Livewire\Attributes\On;
+use Livewire\Component;
+use Livewire\WithPagination;
+use Symfony\Component\Mime\Header\IdentificationHeader;
+
+class IdentificacionReceptors extends Component
+{
+    use WithPagination;
+
+    public $search, $records, $selected_id, $pageTitle, $modalAction, $componentName, $codigo, $valor, $status, $pagination = 10;
+
+    public function mount()
+    {
+        $this->pageTitle = 'Listado';
+        $this->componentName = 'Identificaciín Receptor';
+    }
+
+    public function render()
+    {
+        return view('livewire.identificacion_receptors.identificacion_receptors', [
+            'receptor' => $this->loadData()
+        ]);
+    }
+
+    public function loadData()
+    {
+        if (!empty($this->search)) {
+
+            $this->resetPage();
+
+            $query = IdentificacionReceptor::where('valor', 'like', "%{$this->search}%")
+                ->orWhere('codigo', 'like', "%{$this->search}%")
+                ->orderBy('codigo', 'asc');
+
+        } else {
+            $query = IdentificacionReceptor::orderBy('id', 'asc');
+        }
+
+        $this->records = $query->count();
+
+        return $query->paginate($this->pagination);
+    }
+
+
+    protected function rules()
+    {
+        $rules = [
+            'codigo' => "required|unique:identificacion_receptors,codigo,{$this->selected_id}|min:1",
+            'valor' => "required|unique:identificacion_receptors,valor,{$this->selected_id}|min:3",
+            'status' => 'required'
+        ];
+
+        return $rules;
+    }
+
+    protected function messages()
+    {
+        return [
+            'codigo.required' => 'El codigo es requerido',
+            'codigo.unique' => 'Ya existe el codigo',
+            'codigo.min'=> 'El codigo debe tener mas de 1 caracteres',
+            'valor.required' => 'El nombre de la identificación del receptor es requerido',
+            'valor.unique' => 'Ya existe la identificación del receptor',
+            'valor.min'=> 'El nombre de la identificación del receptor debe tener mas de 3 caracteres',
+            'status.required' => 'El estado es requerido',
+        ];
+    }
+
+    public function Store()
+    {
+        $this->validate($this->rules(), $this->messages());
+
+        $data = IdentificacionReceptor::create([
+            'codigo' => $this->codigo,
+            'valor' => $this->valor,
+            'status' => $this->status
+        ]);
+
+        $this->dispatch('noty', msg: 'Identificación Receptor registrado con exito');
+        $this->ResetInt();
+        $this->dispatch('close-modal');
+    }
+
+    public function Edit($id)
+    {
+        $data = IdentificacionReceptor::find($id);
+        $this->codigo = $data->codigo;
+        $this->valor = $data->valor;
+        $this->status = $data->status;
+        $this->selected_id = $data->id;
+        $this->dispatch('open-modal');
+    }
+
+    public function Update()
+    {
+        $this->validate($this->rules(), $this->messages());
+
+        $data = IdentificacionReceptor::find($this->selected_id);
+        $data->codigo = $this->codigo;
+        $data->valor = $this->valor;
+        $data->status = $this->status;
+        $data->save();
+
+        $this->dispatch('noty', msg: 'Identificación Receptor Actualizado con exito');
+        $this->ResetInt();
+        $this->dispatch('close-modal');
+    }
+
+    #[On('destroy')]
+
+    public function destroy($id)
+    {
+        $data = IdentificacionReceptor::find($id);
+        $data->delete();
+        $this->resetPage();
+        $this->dispatch('noty', msg: 'IDENTIFICACION DEL RECEPTOR ELIMINADO CON ÉXITO');
+    }
+
+    #[On('ResetInt')]
+    public function ResetInt()
+    {
+        $this->codigo = '';
+        $this->valor = '';
+        $this->status = '';
+        $this->search = '';
+        $this->selected_id = 0;
+        $this->resetValidation();
+    }
+}
+
+
+

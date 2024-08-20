@@ -4,7 +4,7 @@
             @include('common.modalHeader')
             <div class="modal-body">
                 <div class="row mt-2">
-                    <div class="col-sm-12 col-md-12">
+                    <div class="col-sm-12 col-md-12 mb-3">
                         <div class="form-floating form-floating-outline mb-2">
                             <input type="text" wire:model.lazy="codigo" class="form-control"
                                 placeholder="Codigo">
@@ -14,7 +14,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="col-sm-12 col-md-12">
+                    <div class="col-sm-12 col-md-12 mb-3">
                         <div class="form-floating form-floating-outline mb-2">
                             <input type="text" wire:model.lazy="municipio" class="form-control" placeholder="Municipio">
                             <label for="municipio">Municipio</label>
@@ -34,7 +34,7 @@
                             <span class="text-danger er">{{ $message }}</span>
                         @enderror
                     </div>
-                    <div class="col-sm-12 col-md-12">
+                    <div class="col-sm-12 col-md-12 mb-3">
                         <select wire:model.lazy='status' class="form-control">
                             <option value="">Elegir...</option>
                             <option value="Activo">Activo</option>

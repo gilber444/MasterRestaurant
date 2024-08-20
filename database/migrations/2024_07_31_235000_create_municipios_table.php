@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('municipios', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo', 2);
+            $table->string('codigo', 3);
             $table->string('municipio', 100);
             $table->unsignedBigInteger('departamento');
             $table->foreign('departamento')->references('id')->on('departamentos');

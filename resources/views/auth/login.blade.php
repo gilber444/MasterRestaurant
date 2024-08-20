@@ -50,15 +50,18 @@
                 <div class="card p-7">
                     <!-- Logo -->
                     <div class="app-brand justify-content-center mt-5">
-                        <a href="index.html" class="app-brand-link gap-3">
+                        <a href="#" class="app-brand-link gap-3">
                             <span class="app-brand-logo demo">
                                 <span style="color: #9055fd">
+
                                     @php
                                     $empresa = DB::table('empresas')->first();
                                     @endphp
+                                    {{--
                                     @if ($empresa)
                                     <img src="{{ route('empresas.mostrar', ['imagen' => $empresa->image]) }}" width="90px" class="responsive">
                                     @endif
+                                    --}}
                                 </span>
                             </span>
                             <span class="app-brand-text demo text-heading fw-semibold">

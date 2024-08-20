@@ -11,7 +11,6 @@ use Livewire\WithPagination;
 class UnidadMedidas extends Component
 {
     use WithPagination;
-    use WithFileUploads;
 
     public $search, $records, $selected_id, $pageTitle, $modalAction, $componentName, $codigo, $valor, $status, $pagination = 10;
 
@@ -51,7 +50,7 @@ class UnidadMedidas extends Component
     protected function rules()
     {
         $rules = [
-            'codigo' => "required|unique:unidad_medidas,valor,{$this->selected_id}|min:1",
+            'codigo' => "required|unique:unidad_medidas,codigo,{$this->selected_id}|min:1",
             'valor' => "required|unique:unidad_medidas,valor,{$this->selected_id}|min:3",
             'status' => 'required'
         ];
@@ -116,16 +115,14 @@ class UnidadMedidas extends Component
 
     public function destroy($id)
     {
-        $id->delete();
+        $medida = UnidadMedida::find($id);
+        $medida->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'UNIDAD DE MEDIDA ELIMINADA CON ÉXITO');
     }
 
-    protected $listeners = [
-        'store' => 'Store',
-        'edit' => 'Edit'
-    ];
 
+    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->codigo = '';
