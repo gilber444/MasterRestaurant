@@ -76,8 +76,64 @@
     @endcan
     @include('layouts.theme.menu_javier')
     @include('layouts.theme.menu_ricardo')
-
-
+    @can('Admin_Menus')
+        <li class="menu-item
+        {{ Request::is('marcas') ? 'active' : '' }}
+        {{ Request::is('lineas') ? 'active' : '' }}
+        {{ Request::is('categorias') ? 'active' : '' }}
+        {{ Request::is('forma_ventas') ? 'active' : '' }}
+        {{ Request::is('producto_menus') ? 'active' : '' }}
+        ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons ri-restaurant-line"></i>
+                <div data-i18n="Productos Elaborados">Productos Elaborados</div>
+            </a>
+            <ul class="menu-sub">
+                @can('ProductoMenu_Index')
+                    <li class="menu-item {{ Request::is('programacionmenu') ? 'active' : '' }}">
+                        <a href="{{route('programacionmenu')}}" class="menu-link">
+                            <div data-i18n="Program. del Menú">Program. del Menú</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Marcas_Index')
+                    <li class="menu-item {{ Request::is('marcas') ? 'active' : '' }}">
+                        <a href="{{ route('marcas') }}" class="menu-link">
+                            <div data-i18n="Marcas">Marcas</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Lineas_Index')
+                    <li class="menu-item {{ Request::is('lineas') ? 'active' : '' }}">
+                        <a href="{{ route('lineas') }}" class="menu-link">
+                            <div data-i18n="Lineas">Lineas</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('Categorias_Index')
+                    <li class="menu-item {{ Request::is('categorias') ? 'active' : '' }}">
+                        <a href="{{ route('categorias') }}" class="menu-link">
+                            <div data-i18n="Categorias">Categorias</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('FormaVenta_Index')
+                    <li class="menu-item {{ Request::is('forma_ventas') ? 'active' : '' }}">
+                        <a href="{{ route('forma_ventas') }}" class="menu-link">
+                            <div data-i18n="Forma de Ventas">Forma de Ventas</div>
+                        </a>
+                    </li>
+                @endcan
+                @can('ProductoMenu_Index')
+                    <li class="menu-item {{ Request::is('producto_menus') ? 'active' : '' }}">
+                        <a href="{{ route('producto_menus') }}" class="menu-link">
+                            <div data-i18n="Menú">Menú</div>
+                        </a>
+                    </li>
+                @endcan
+            </ul>
+        </li>
+    @endcan
 
     {{--
     <!-- Layouts -->

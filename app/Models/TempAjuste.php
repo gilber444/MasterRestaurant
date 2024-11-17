@@ -10,11 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TempAjuste extends Model
 {
 
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
-    protected $fillable = ['producto', 'cantidad', 'precio'];
-
-    public function Rproductos(){
-        return $this->belongsTo(Productos::class,'producto');
-    }
+    protected $fillable = ['codigo', 'producto', 'medida', 'nombre', 'cantidad', 'costo',
+        'total', 'user'
+    ];
 }

@@ -66,6 +66,17 @@
         }).showToast();
     });
 
+    window.addEventListener('noty-error-menu', event => {
+        Swal.fire({
+            title: "Ocurrio un Error",
+            text: event.detail.msg,
+            icon: "error",
+            showCancelButton: false,
+            showCloseButton: false, 
+            confirmButtonText: "OK" 
+        });
+    });
+
     window.addEventListener('close-modal', () => {
         $('#MyModal').modal('hide'); // Asegúrate de reemplazar `yourModalId` con el ID de tu modal
     });

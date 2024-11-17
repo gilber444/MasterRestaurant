@@ -25,11 +25,6 @@ class IncotermsSeeder extends Seeder
             ['codigo' => '09', 'valor' => 'FOB-Libre a bordo', 'status' => 'Desactivado'],
             ['codigo' => '10', 'valor' => 'CFR-Costo y flete', 'status' => 'Desactivado'],
             ['codigo' => '11', 'valor' => 'CIF- Costo seguro y flete', 'status' => 'Desactivado'],
-            ['codigo' => '12', 'valor' => 'DAT-Entregado en terminal', 'status' => 'Desactivado'],
-            ['codigo' => '13', 'valor' => 'DAF-Entregada en frontera', 'status' => 'Desactivado'],
-            ['codigo' => '14', 'valor' => 'DES-Entregada sobre duque', 'status' => 'Desactivado'],
-            ['codigo' => '15', 'valor' => 'DEQ-Entregada en muelle', 'status' => 'Desactivado'],
-            ['codigo' => '16', 'valor' => 'DDU- Entregada derechos no pagados', 'status' => 'Desactivado'],
         ];  
 
         DB::table('incoterms')->insert($incoterm);

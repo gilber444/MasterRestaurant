@@ -68,18 +68,20 @@
                                     </div>
                                 </div>
 
-                                <div class="input-group input-group-merge  mb-5 w-50">
-                                    <span id="basic-icon-default-fullname2" class="input-group-text">
-                                        <i class="ri-text" style="color: #8e8e8e;"></i>
-                                    </span>
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="text" wire:model.lazy="marca" class="form-control" placeholder="Nombre del Marca">
-                                        <label for="marca">Nombre De La Marca</label>
+                                <div class="input-group col-md-6 mb-5 w-50">
+                                    <label class="input-group-text" for="inputGroupSelect01">Marca</label>
+                                    <select wire:model.lazy="marca" class="form-select " data-allow-clear="true" tabindex="-1" aria-hidden="true">
+                                        <option value="" >Seleccionar Marca</option>
+                                        @forelse ($marcas as $marca)
+                                            <option value="{{ $marca->id }}" >{{ $marca->nombre }}</option>
+                                        @empty
+                                            <option value=""></option>
+                                        @endforelse
+                                    </select>
 
-                                        @error('marca')
-                                            <span class="text-danger er">{{ $message }}</span>
-                                        @enderror
-                                    </div>
+                                    @error('marca')
+                                        <span class="text-danger er">{{ $message }}</span>
+                                    @enderror
                                 </div>
 
                                 <div class="input-group mb-5 w-100">
@@ -167,14 +169,14 @@
 
                         @if($activateNewSection)
                             <form class="mt-5">
-                                <h6 class="mb-3">2. Administracion De Precios</h6>
-                                <div class="row mt-2">
+                                <h6 class="mb-3">2. Administracion De Costos</h6>
+                                <div class="row mt-6">
                                     <div class="input-group input-group-merge mb-5" style="width:50%;">
                                          <span id="basic-icon-default-fullname2" class="input-group-text">
                                             <i class="ri-formula" style="color: #8e8e8e;"></i>
                                         </span>
                                         <div class="form-floating form-floating-outline">
-                                            <input type="text" wire:model.lazy="civa" wire:keydown.enter="actualizarCostoSinIva1" class="form-control" id="basic-icon-default-fullname" placeholder="C/IVA">
+                                            <input type="text" wire:model.lazy="civa" wire:keydown.enter="actualizarCostoSinIva1" class="form-control" id="basic-icon-default-fullname" placeholder="C/IVA" maxlength="5" oninput="this.value = this.value.replace(/[^0-9.]/g, '').slice(0, 5);">
                                             <label for="civa">C/IVA</label>
 
                                             @error('civa')
@@ -189,7 +191,7 @@
                                         </span>
 
                                         <div class="form-floating form-floating-outline">
-                                            <input type="text" wire:model.lazy="csiva"  class="form-control" id="basic-icon-default-fullname" placeholder="C.S/IVA">
+                                            <input type="text" wire:model.lazy="csiva"  class="form-control" id="basic-icon-default-fullname" placeholder="C.S/IVA" maxlength="5" oninput="this.value = this.value.replace(/[^0-9.]/g, '').slice(0, 5);">
                                             <label for="csiva">C.S/IVA</label>
 
                                             @error('csiva')
@@ -207,44 +209,38 @@
                     <div class="tab-pane fade" id="form-tabs-social" role="tabpanel" style="height: 33.6rem;overflow: hidden;overflow-y: auto;padding: 0rem 0rem;">
                         <form style="display: grid;grid-template-columns: repeat(4,1fr);gap: 1.2rem;padding: 0rem 1rem;"  id="image-gallery">
                             @if($activateNewSection)
-                                    @foreach ($allImages as $imageGalery)
-                                        <div style=" width: 11.5rem;">
+                                @foreach ($allImages as $imageGalery)
+                                    <div style=" width: 11.5rem;">
 
-                                            <div 
-                                            class="image-preview {{ basename($imageGalery) == $image ? 'selected-image' : 'no-selected-image' }}" 
-                                            style="background-color: {{ basename($imageGalery) == $image ? '#00cc21' : '#f2f2f2' }};" id="preview-{{ basename($imageGalery) }}"
-                                            >
-                                                <img src="{{ asset($imageGalery) }}" alt="{{ basename($imageGalery) }}" style="max-width: 11.5rem !important; min-width: 11.5rem !important; max-height: 11.5rem !important; min-height: 11.5rem !important; padding: 0.5rem; object-fit: cover;" class="w-px-40 h-auto">
+                                        <div 
+                                        class="image-preview {{ basename($imageGalery) == $image ? 'selected-image' : 'no-selected-image' }}" 
+                                        style="background-color: {{ basename($imageGalery) == $image ? '#00cc21' : '#f2f2f2' }};" id="preview-{{ basename($imageGalery) }}"
+                                        >
+                                            <img src="{{ asset($imageGalery) }}" alt="{{ basename($imageGalery) }}" style="max-width: 11.5rem !important; min-width: 11.5rem !important; max-height: 11.5rem !important; min-height: 11.5rem !important; padding: 0.5rem; object-fit: cover;" class="w-px-40 h-auto">
 
-                                                
-                                            </div>
-
-
-                                            @if (basename($imageGalery) != $image)
-                                                <div class="demo-inline-spacing" >
-                                                    <style>
-                                                        .selected-image-b{
-                                                            display: none !important;
-                                                        }
-
-                                                    </style>
-                                                    <button onclick="highlightImage('{{ basename($imageGalery) }}')" type="button" class="btn btn-icon btn-label-primary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}">
-                                                        <span class="tf-icons ri-check-double-line ri-22px"></span>
-                                                    </button>
-
-                                                    <button wire:click.prevent="eliminarImagen('{{ basename($imageGalery) }}')"  type="button" class="btn btn-icon btn-label-secondary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}"  >
-                                                        <i  class="ri-delete-bin-6-line"></i>
-                                                    </button>
-                                                </div>
-                                            @endif
+                                            
                                         </div>
 
 
-                                    @endforeach
-                                    
+                                        @if (basename($imageGalery) != $image)
+                                            <div class="demo-inline-spacing" >
+                                                <style>
+                                                    .selected-image-b{
+                                                        display: none !important;
+                                                    }
 
+                                                </style>
+                                                <button onclick="highlightImage('{{ basename($imageGalery) }}')" type="button" class="btn btn-icon btn-label-primary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}">
+                                                    <span class="tf-icons ri-check-double-line ri-22px"></span>
+                                                </button>
 
-
+                                                <button wire:click.prevent="eliminarImagen('{{ basename($imageGalery) }}')"  type="button" class="btn btn-icon btn-label-secondary waves-effect {{ basename($imageGalery) == $image ? 'selected-image-b' : 'no-selected-image-b' }}"  >
+                                                    <i  class="ri-delete-bin-6-line"></i>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
                             @endif
                         </form>
                     </div>

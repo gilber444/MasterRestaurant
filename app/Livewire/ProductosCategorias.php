@@ -112,6 +112,8 @@ class ProductosCategorias extends Component
         $this->dispatch('noty', msg: 'PRODUCTO Actualizado con exito');
         $this->ResetInt();
         $this->dispatch('close-modal');
+
+        return redirect()->route(route: 'productosCategorias');
     }
 
     #[On('destroy')]
@@ -119,6 +121,13 @@ class ProductosCategorias extends Component
     public function destroy($id)
     {
         $deleteCategoria = ProductoCategoria::findOrFail($id);
+
+
+        if ($deleteCategoria->HProducto()->exists()) {
+            $this->dispatch('noty-error', msg: 'NO POSIBLE ELIMINAR LA CATEGORIA - este registro se esta usando en otro modulo.');
+            return;
+        }
+
         $deleteCategoria->delete();
 
         $this->resetPage();

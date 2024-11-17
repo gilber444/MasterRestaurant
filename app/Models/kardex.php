@@ -21,6 +21,8 @@ class kardex extends Model
         'totalingreso',
         'egreso',
         'totalegreso',
+        'costoUmovimiento',
+        'costoUnitario',
         'saldo',
         'saldototal'
     ];

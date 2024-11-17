@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Sucursales;
 use App\Models\TipoEstablecimiento;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -115,12 +116,21 @@ class TipoEstablecimientos extends Component
     public function destroy($id)
     {
         $data = TipoEstablecimiento::find($id);
+        $sucursal = Sucursales::where('tipo', $data->id);
+        if ($sucursal) {
+            $this->dispatch('noty', msg: 'NO SE PUEDE ELIMINAR: EL TIPO ESTABLECIMIENTO ESTÁ ASOCIADO A UNA SUCURSAL');
+            return;
+        }
         $data->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'TIPO ESTABLECIMIENTO ELIMINADO CON ÉXITO');
     }
 
-    #[On('ResetInt')]
+    protected $listeners = [
+        'store' => 'Store',
+        'edit' => 'Edit'
+    ];
+
     public function ResetInt()
     {
         $this->codigo = '';

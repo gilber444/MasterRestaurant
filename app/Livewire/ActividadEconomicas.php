@@ -72,6 +72,7 @@ class ActividadEconomicas extends Component
         ];
     }
 
+    #[On('Store')]
     public function Store()
     {
         $this->validate($this->rules(), $this->messages());
@@ -86,7 +87,7 @@ class ActividadEconomicas extends Component
         $this->ResetInt();
         $this->dispatch('close-modal');
     }
-
+    #[On('Edit')]
     public function Edit($id)
     {
         $actividad = ActividadEconomica::find($id);
@@ -113,19 +114,19 @@ class ActividadEconomicas extends Component
     }
 
     #[On('destroy')]
-
     public function destroy($id)
     {
         $actividad = ActividadEconomica::find($id);
+
+        $empresa = Empresas::where('actividad', $actividad->id);
+        if ($empresa) {
+            $this->dispatch('noty', msg: 'NO SE PUEDE ELIMINAR: LA ACTIVIDAD ECONOMICA ESTÁ ASOCIADO A UNA EMPRESA');
+            return;
+        }
         $actividad->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'ACTIVIDAD ECONOMICA ELIMINADA CON ÉXITO');
     }
-
-    protected $listeners = [
-        'store' => 'Store',
-        'edit' => 'Edit'
-    ];
 
     public function ResetInt()
     {

@@ -19,10 +19,9 @@ return new class extends Migration
             $table->foreign('producto')->references('id')->on('productos');
             $table->unsignedBigInteger('inventario');
             $table->foreign('inventario')->references('id')->on('inventarios');
-            $table->unsignedBigInteger('valor');
-            $table->foreign('valor')->references('id')->on('unidad_medidas');
+            $table->unsignedBigInteger('unidad');
+            $table->foreign('unidad')->references('id')->on('producto_unidad_medidas');
             $table->decimal('cantidad', 10,2);
-            $table->decimal('ingreso', 10,2);
             $table->decimal('costo', 10,2);
             $table->decimal('total', 10,2);
             $table->softDeletes();

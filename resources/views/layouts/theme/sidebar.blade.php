@@ -11,7 +11,7 @@
                     @endif
                 </span>
             </span>
-            <span class="app-brand-text demo menu-text fw-semibold ms-2">
+            <span class="app-brand-text demo menu-text fw-semibold ms-2 text-sm">
                 @php
                     $empresa = DB::table('empresas')->first();
                 @endphp

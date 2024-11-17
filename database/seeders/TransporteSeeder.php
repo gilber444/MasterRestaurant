@@ -14,14 +14,12 @@ class TransporteSeeder extends Seeder
     public function run(): void
     {
         $transporte = [
-            ['codigo' => '1', 'valor' => 'Terrestre', 'status' => 'Desactivado'],
-            ['codigo' => '2', 'valor' => 'Marítimo', 'status' => 'Desactivado'],
-            ['codigo' => '3', 'valor' => 'Aéreo', 'status' => 'Desactivado'],
-            ['codigo' => '4', 'valor' => 'Multimodal, Terrestre-marítimo', 'status' => 'Desactivado'],
-            ['codigo' => '6', 'valor' => 'Multimodal, Terrestre-aéreo', 'status' => 'Desactivado'],
-            ['codigo' => '7', 'valor' => 'Multimodal, Marítimo-aéreo', 'status' => 'Desactivado'],
-            ['codigo' => '8', 'valor' => 'Multimodal, Terrestre-Marítimo-aéreo', 'status' => 'Desactivado'],
-            
+            ['codigo' => '1', 'valor' => 'TERRESTRE', 'status' => 'Desactivado'],
+            ['codigo' => '2', 'valor' => 'AEREO', 'status' => 'Desactivado'],
+            ['codigo' => '3', 'valor' => 'MARITIMO', 'status' => 'Desactivado'],
+            ['codigo' => '4', 'valor' => 'FERREO', 'status' => 'Desactivado'],
+            ['codigo' => '5', 'valor' => 'MULTIMODAL', 'status' => 'Desactivado'],
+            ['codigo' => '6', 'valor' => 'CORREO', 'status' => 'Desactivado'],            
         ];  
 
         DB::table('transportes')->insert($transporte);

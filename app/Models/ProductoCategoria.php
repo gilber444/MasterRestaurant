@@ -13,4 +13,9 @@ class ProductoCategoria extends Model
         'categoria',
         'estado'
     ];
+
+    public function HProducto()
+    {
+        return $this->hasMany(Producto::class, 'categoria'); 
+    }
 }

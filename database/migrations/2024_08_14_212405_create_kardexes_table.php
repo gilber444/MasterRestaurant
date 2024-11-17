@@ -32,6 +32,8 @@ return new class extends Migration
             $table->decimal('totalingreso', 14, 4)->default(0);
             $table->decimal('egreso', 10, 2)->default(0);
             $table->decimal('totalegreso', 14, 4)->default(0);
+            $table->decimal('costoUmovimiento', 14, 4)->default(0);
+            $table->decimal('costoUnitario', 14, 4)->default(0);
             $table->decimal('saldo', 10, 2)->default(0);
             $table->decimal('saldototal', 14, 4)->default(0);
             $table->softDeletes();

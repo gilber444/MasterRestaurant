@@ -43,10 +43,16 @@
                                             <img src="{{ route('productos.mostrar', ['imagen' => $producto->image]) }}" alt="Imagen" class=" w-px-40 h-auto" style="height: 3rem !important;width: 3rem !important;object-fit: cover; border-radius:0.3rem">
                                         @endif
                                     </td>
-                                    <td class="text-center" style="font-size: 0.8rem;">{{ $producto->codigo_barra }}</td>
+
+                                    @if ($producto->codigo_barra == null)
+                                        <td class="text-center" style="font-size: 0.8rem;">-</td>
+                                    @else
+                                        <td class="text-center" style="font-size: 0.8rem;">{{ $producto->codigo_barra }}</td>
+                                    @endif
+
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->producto }}</td>
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RcategoriaProducto->categoria}}</td>
-                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->marca }}</td>
+                                    <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->Rmarcas ? $producto->Rmarcas->nombre : '-' }}</td>
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RunidadMedida->nombre }}</td>
                                     <td class="text-center" style="font-size: 0.8rem;"> {{ $producto->RunidadMedidaMH->valor  }}</td>
                                     <td class="text-center">

@@ -120,7 +120,11 @@ class FormaPagos extends Component
         $this->dispatch('noty', msg: 'FORMA DE PAGO ELIMINADO CON ÉXITO');
     }
 
-    #[On('ResetInt')]
+    protected $listeners = [
+        'store' => 'Store',
+        'edit' => 'Edit'
+    ];
+
     public function ResetInt()
     {
         $this->codigo = '';

@@ -10,7 +10,7 @@ class DetalleAjuste extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['ajuste', 'producto', 'inventario', 'medida', 'cantidad', 'ingreso',
+    protected $fillable = ['ajuste', 'producto', 'inventario', 'unidad', 'cantidad',
     'costo', 'total'];
 
     public function Rproductos(){
@@ -18,6 +18,10 @@ class DetalleAjuste extends Model
     }
 
     public function Rmedidas(){
-        return $this->belongsTo(UnidadMedida::class,'valor');
+        return $this->belongsTo(UnidadMedida::class,'unidad');
+    }
+
+    public function Rajustes(){
+        return $this->belongsTo(Ajuste::class,'ajuste');
     }
 }

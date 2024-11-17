@@ -36,7 +36,21 @@ class AuthenticatedSessionController extends Controller
             Auth::attempt(['email' => $credentials['user'], 'password' => $credentials['password']])) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('dashboard'));
+           // Verificar el perfil del usuario autenticado
+           $user = Auth::user();
+
+           if ($user->status !== 'ACTIVE') {
+                Auth::logout(); // Desconectar si la cuenta no está activa
+                return back()->withErrors(['user' => 'Tu cuenta está inactiva. Contacta al administrador.']);
+            }
+
+           if ($user->profile !== 'Cajeros') {
+               // Si el perfil no es "cajero", redirigir a la ruta del dashboard
+               return redirect()->intended(route('dashboard'));
+           } else {
+               // Si el perfil es "cajero", redirigir a la ruta de actividades
+               return redirect()->intended(route('actividades'));
+           }
         }
 
         return back()->withErrors([

@@ -1,15 +1,23 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Livewire\Actividades;
 use App\Livewire\AsignarPermisos;
+use App\Livewire\Categorias;
+use App\Livewire\EditarProducto;
 use App\Livewire\Empresas;
+use App\Livewire\FormaVentas;
+use App\Livewire\Inventarios;
 use App\Livewire\Kardexs;
+use App\Livewire\Lineas;
+use App\Livewire\Marcas;
 use App\Livewire\Parametros;
+use App\Livewire\ProductoMenus;
 use App\Livewire\Roles;
 use App\Livewire\Sucursales;
 use App\Livewire\Users;
-use App\Livewire\Inventarios;
 use Illuminate\Support\Facades\Route;
+
 
 
 Route::get('/', function () {
@@ -35,6 +43,13 @@ Route::middleware('auth')->group(function () {
     Route::get('parametro', Parametros::class)->can('Sucursales_Index')->name('parametro');
     Route::get('kardex', Kardexs::class)->can('Kardex_Index')->name('kardex');
     Route::get('inventario', Inventarios::class)->can('Inventarios_Index')->name('inventario');
+    Route::get('marcas', Marcas::class)->can('Marcas_Index')->name('marcas');
+    Route::get('lineas', Lineas::class)->can('Lineas_Index')->name('lineas');
+    Route::get('categorias', Categorias::class)->can('Categorias_Index')->name('categorias');
+    Route::get('forma_ventas', FormaVentas::class)->can('FormaVenta_Index')->name('forma_ventas');
+    Route::get('producto_menus', ProductoMenus::class)->can('ProductoMenu_Index')->name('producto_menus');
+    Route::get('EditarProducto/{id}', EditarProducto::class)->name('EditarProducto');
+    Route::get('actividades', Actividades::class)->name('actividades')->can('Actividades_Index');
 });
 
 require __DIR__.'/auth.php';

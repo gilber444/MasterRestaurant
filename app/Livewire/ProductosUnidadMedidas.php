@@ -115,6 +115,8 @@ class ProductosUnidadMedidas extends Component
         $this->dispatch('noty', msg: 'UNIDAD Actualizado con exito');
         $this->ResetInt();
         $this->dispatch('close-modal');
+
+        return redirect()->route(route: 'productosUnidadMedidas');
     }
 
     #[On('destroy')]
@@ -122,6 +124,10 @@ class ProductosUnidadMedidas extends Component
     public function destroy($id)
     {
         $deleteUnidad = ProductoUnidadMedida::findOrFail($id);
+        if ($deleteUnidad->HProducto()->exists()) {
+            $this->dispatch('noty-error', msg: 'NO POSIBLE ELIMINAR LA UNIDAD DE MEDIDA - este registro se esta usando en otro modulo');
+            return;
+        }
         $deleteUnidad->delete();
 
         $this->resetPage();

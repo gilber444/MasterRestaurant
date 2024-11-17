@@ -72,7 +72,7 @@ class Kardexs extends Component
         ->when($this->sucursal[$id] !== '*', function ($query) {
             return $query->where('sucursal', $this->sucursal[$this->selected_id]);
         })
-        ->select('sucursal', 'fecha', 'descripcion', 'ingreso', 'egreso', 'saldo')
+        ->select('sucursal', 'fecha', 'descripcion', 'ingreso', 'egreso', 'costoUnitario', 'saldo')
         ->orderByDesc('id')
         ->get();
 
@@ -84,6 +84,7 @@ class Kardexs extends Component
                 'sucursal' => 'Sucursal',
                 'ingreso' => 0,
                 'egreso' => 0,
+                'costoUnitario' => 0,
                 'saldo' => 0
             ];
         }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('producto_unidad_medidas', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();
-            $table->string('simbolo');
+            $table->string('estado');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -1,0 +1,3356 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use App\Helpers\Convertidor;
+use App\Http\Controllers\ExportController;
+use App\Models\ActividadEconomica;
+use App\Models\Actividades;
+use App\Models\AmbienteDestino;
+use App\Models\Anulaciones;
+use App\Models\AnulacionesDetalle;
+use App\Models\Aperturas;
+use App\Models\Apis;
+use App\Models\Arqueos;
+use App\Models\Caja;
+use App\Models\Clientes;
+use App\Models\Cortes;
+use App\Models\Departamentos;
+use App\Models\Descuentos;
+use App\Models\Devoluciones;
+use App\Models\DevolucionesDetalles;
+use App\Models\Distritos;
+use App\Models\dte;
+use App\Models\Empresas;
+use App\Models\Facturadores;
+use App\Models\Firmador;
+use App\Models\IdentificacionReceptor;
+use App\Models\Inventarios;
+use App\Models\Kardex;
+use App\Models\Medidas;
+use App\Models\ModeloFacturacion;
+use App\Models\Municipios;
+use App\Models\Parametros;
+use App\Models\Precios;
+use App\Models\Productos;
+use App\Models\RecepcionDte;
+use App\Models\Remesas;
+use App\Models\resumenDte;
+use App\Models\Sucursales;
+use App\Models\TipoContigencia;
+use App\Models\TipoDocumento;
+use App\Models\TipoItem;
+use App\Models\TipoPagos;
+use App\Models\TipoPersona;
+use App\Models\TipoTransmision;
+use App\Models\Tocken;
+use App\Models\Tributo;
+use App\Models\User;
+use App\Models\Ventas;
+use App\Models\VentasDetalles;
+use App\Models\tmpVentas;
+use App\Traits\FirmadorDTE;
+use App\Traits\GeneraJsonF;
+use App\Traits\GenerarJsonCorteX;
+use App\Traits\GenerarToken;
+use App\Traits\NumeroControlTrait;
+use App\Traits\RecepcionDTEC;
+use App\Traits\RecepcionDTEF;
+use Carbon\Carbon;
+use GuzzleHttp\Client;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
+use Livewire\Component;
+use PHPMailer\PHPMailer\PHPMailer;
+
+class PosController extends Component
+{
+    use NumeroControlTrait;
+    use GenerarToken;
+    use FirmadorDTE;
+    use RecepcionDTEF;
+    use RecepcionDTEC;
+    use GeneraJsonF;
+    use GenerarJsonCorteX;
+
+    ////para mostrar en la pantalla y crear la apertura de caja
+    public $pageTitle, $estadoCaja, $fechaApertura, $horaApertura, $montoApertura, $aperturas,$aperturas2,$valid,$corteActivo, $act = 0, $parametros;
+
+    //para los datos de los productos
+    public $total, $itemsQuantity, $descu, $fechaV = [], $can = [], $pri = [], $uni = [];
+
+    //para los clientes
+    public $departamentos, $municipios, $nombreCliente, $nit, $dui, $registro, $giro, $correo, $telefono, $celular, $tipoCliente, $direccion, $departamento, $municipio, $tipoPersona, $homologado, $distrito, $actividad, $clienteAddSelectId, $clienteAddSelectName, $idenreceptors, $idenReceptor, $distritos, $personas, $actividades;
+
+    ///para generar las ventas
+    public $formas, $efectivo, $cambio, $metodo, $comprobante, $duiC, $idC, $nombreC, $direccionC, $telefonoC, $correoC, $nrcC, $tipoC = 0, $actividadC, $fecha, $correlativo;
+
+    ///para la parte de remesas
+    public $remesas, $montoCaja, $disponible, $montoEnvio2, $montoEnvio, $remesas2, $montoCaja2, $disponible2;
+
+    //para los cierres de caja
+    public $showModalCorteZ = false, $showModalCorteZ2 = false,  $showModalCorteX = false,  $showModalAutenticate = false, $showModalAutenticate2 = false,  $showModalAutenticateX = false,
+    $username, $password, $username2, $password2, $modalUpdated, $b100, $b100R, $b50, $b50R, $b20, $b20R, $b10, $b10R, $b5, $b5R, $b1, $b1R, $bd1, $bd1R, $b025, $b025R, $b010, $b010R, $b005, $b005R, $b001, $b001R, $totalEfectivo, $totalDiferencia, $totalTarjetas, $totalCheque, $totalCreditos, $totalVentas, $totalRemesas, $totalDevoluciones, $totalAnulaciones, $totalSumas, $totalSumaResta, $totalEfectivo2, $totalDiferencia2, $totalTarjetas2, $totalCheque2, $totalCreditos2, $totalVentas2, $totalRemesas2, $totalDevoluciones2, $totalAnulaciones2, $totalSumas2, $totalSumaResta2, $cortes, $cortes2;
+
+    //para los cortes X
+    public $usernamex, $passwordx, $totalEfectivox, $totalDiferenciax, $totalTarjetasx, $totalChequex, $totalCreditosx, $totalVentasx, $totalRemesasx, $totalDevolucionesx, $totalAnulacionesx, $totalSumasx, $totalSumaRestax, $cortesx;
+
+    ///para las devoculiciones y cancelaciones
+    public $numeroDoc, $tipoTran, $passwordd, $error, $formasPagos = [], $fo;
+
+    public function mount()
+    {
+        $this->Carrito();
+        $this->cargaDatos();
+
+        $this->valid = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Aperturado')->where('fechaApertura', '<>', date('Y-m-d'))->count();
+
+        $this->estadoCaja = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('fechaApertura', date('Y-m-d'))->where('estado', 'Aperturado')->count();
+
+        $this->aperturas = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('fechaApertura', date('Y-m-d'))->where('estado', 'Aperturado')->first();
+
+        $this->aperturas2 = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Aperturado')->first();
+
+        $this->corteActivo = Cortes::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Activo')->first();
+
+        $this->departamentos = Departamentos::all();
+
+        $this->municipios = Municipios::all();
+
+        $this->fechaApertura = date('Y-m-d');
+        $this->horaApertura = date('h:i:s');
+
+        $this->formas = TipoPagos::all();
+
+        $this->formasPagos = Facturadores::all();
+
+        if ($this->aperturas)
+        {
+            $this->remesas = Remesas::where('fecha', $this->aperturas->fechaApertura)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('estado', 'Remesado')
+            ->where('arqueado', 0)
+            ->sum('monto');
+
+            $this->cortes = Arqueos::where('fecha', $this->aperturas->fechaApertura)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->sum('totalGlobal');
+
+            $this->montoCaja = Caja::where('fecha', $this->aperturas->fechaApertura)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('estado', 'Cancelado')
+            ->where('arqueado', 0)
+            ->sum('total');
+
+            $this->montoEnvio = number_format($this->montoCaja - $this->remesas, 2);
+
+            $this->totalVentas = Caja::where('fecha', $this->aperturas->fechaApertura)
+            ->where('tipoPago', 1)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('estado', 'Cancelado')
+            ->sum('total');
+
+            $this->totalTarjetas = Caja::where('fecha', $this->aperturas->fechaApertura)->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+            $this->totalCheque = Caja::where('fecha',$this->aperturas->fechaApertura)->where('tipoPago', 3)->where('estado', 'Cancelado')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalCreditos = Caja::where('fecha', $this->aperturas->fechaApertura)->where('tipoPago', 4)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalRemesas = Remesas::where('fecha', $this->aperturas->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('monto');
+
+            $this->totalAnulaciones = Caja::where('fecha', $this->aperturas->fechaApertura)->where('estado', 'Anulado')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalDevoluciones = Caja::where('fecha', $this->aperturas->fechaApertura)->where('estado', 'Devolucion')->where('caja', session('caja'))->where('sucursal', session('sucursal'))->sum('total');
+
+            $this->totalSumas = $this->totalVentas + $this->totalTarjetas + $this->totalCheque;
+            $this->totalSumaResta = $this->totalSumas - $this->cortes - $this->remesas;
+
+            $this->disponible = $this->montoCaja - $this->remesas;
+        }
+
+        if ($this->aperturas2)
+        {
+            $this->remesas2 = Remesas::where('fecha', $this->aperturas2->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('monto');
+
+            $this->montoCaja2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('total');
+
+            $this->montoEnvio2 = number_format($this->montoCaja2 - $this->remesas2, 2);
+
+            $this->totalVentas2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 1)->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('total');
+
+            $this->totalTarjetas2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+            $this->totalCheque2 = Caja::where('fecha',$this->aperturas2->fechaApertura)->where('tipoPago', 3)->where('estado', 'Cancelado')->where('sucursal', session('sucursal'))->sum('total');
+
+            $this->totalCreditos2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 4)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalRemesas2 = Remesas::where('fecha', $this->aperturas2->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('monto');
+
+            $this->cortes2 = Arqueos::where('fecha', $this->aperturas2->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('totalGeneral');
+
+            $this->totalAnulaciones2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('estado', 'Anulado')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalDevoluciones2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('estado', 'Devolucion')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+            $this->totalSumas2 = $this->totalVentas2 + $this->totalTarjetas2 + $this->totalCheque2;
+            $this->totalSumaResta2 = $this->totalSumas2 -  $this->totalRemesas2 - $this->cortes2;
+
+            $this->disponible2 = $this->totalSumaResta2;
+        }
+    }
+
+    public function CargaDatos()
+    {
+        $this->idenreceptors = IdentificacionReceptor::all();
+        $this->departamentos = Departamentos::orderBy('departamento', 'asc')->get();
+        $this->municipios = Municipios::orderBy('municipio', 'asc')->get();
+        $this->distritos = Distritos::orderBy('distrito', 'asc')->get();
+        $this->personas = TipoPersona::orderBy('valor', 'asc')->get();
+        $this->actividades = ActividadEconomica::orderBy('valor', 'asc')->get();
+
+        $empresas = Empresas::find(session('empresa'));
+        $sucursales = Sucursales::find(session('sucursal'));
+        $this->parametros = Parametros::find(session('caja'));
+        $parametros = Parametros::find(session('caja'));
+
+        $this->pageTitle = $empresas->empresa . ' ' . $sucursales->nombre . ' CAJA No. ' . $parametros->caja;
+    }
+
+    public function Carrito()
+    {
+        $this->itemsQuantity = tmpVentas::where('user', Auth::user()->id )
+        ->where('esenario', 1)
+        ->where('sucursal', session('sucursal'))->sum('quantity');
+
+        $this->total = tmpVentas::where('user', Auth::user()->id )
+        ->where('esenario', 1)
+        ->where('sucursal', session('sucursal'))->sum('total');
+        $this->descu = tmpVentas::where('user', Auth::user()->id )
+        ->where('esenario', 1)
+        ->where('sucursal', session('sucursal'))->sum('descuento');
+        $cartItems =tmpVentas::where('user', Auth::user()->id )
+        ->where('esenario', 1)
+        ->where('sucursal', session('sucursal'))->get();
+        foreach ($cartItems as $item) {
+            $pp = Precios::where('producto', $item->producto)->where('medida', $item->uni)->first();
+            $this->can[$item->id] = $item->quantity;
+            $this->uni[$item->id] = $pp->id;
+        }
+    }
+
+    public function paginationView()
+    {
+        return 'vendor.livewire.bootstrap';
+    }
+
+    public function render()
+    {
+        $user_id = Auth::user()->id;
+        $cart =tmpVentas::where('user', $user_id)
+        ->where('esenario', 1)
+        ->where('sucursal', session('sucursal'))
+        ->where('empresa', session('empresa'))
+        ->orderBy('created_at', 'desc')
+        ->get();
+        return view('livewire.pos.pos', ['cart' => $cart])
+            ->extends('layouts.theme.app')
+            ->section('content');
+    }
+
+    public function updateDepto()
+    {
+        $this->municipios = Municipios::where('departamento', $this->departamento)->get();
+    }
+
+    public function updateMuni()
+    {
+        $this->distritos = Distritos::where('municipio', $this->municipio)->get();
+    }
+
+    public function Aperturar()
+    {
+        $rules = [
+            'montoApertura' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/|min:0.01',
+        ];
+
+        $messages = [
+            'montoApertura.required' => 'El campo de monto de apertura es obligatorio.',
+            'montoApertura.numeric' => 'El monto de apertura debe ser un número.',
+            'montoApertura.regex' => 'El monto de apertura debe ser numérico y puede tener hasta dos decimales.',
+            'montoApertura.min' => 'El monto de apertura debe ser de al menos 0.01.',
+        ];
+
+        $this->validate($rules, $messages);
+
+        $vali = Aperturas::where('caja', session('caja'))
+            ->where('sucursal', session('sucursal'))
+            ->where('empresa', session('empresa'))
+            ->where('fechaApertura', $this->fechaApertura)
+            ->first();
+        if ($vali) {
+            $this->emit('item-error', 'No se puede aperturar dos veces una caja');
+        } else {
+            $aper = Aperturas::create([
+                'caja' => session('caja'),
+                'sucursal' => session('sucursal'),
+                'empresa' => session('empresa'),
+                'fechaApertura' => $this->fechaApertura,
+                'horaApertura' => $this->horaApertura,
+                'inicio' => $this->montoApertura,
+                'final' => null,
+                'FcierreApertura' => null,
+                'HcierreApertura' => null,
+                'estado' => 'Aperturado',
+                'cajero' => Auth::user()->id,
+            ]);
+
+            $cor = Cortes::where('caja', session('caja'))->where('sucursal', session('sucursal'))->where('empresa', session('empresa'))->latest()->first();
+
+            if ($cor) {
+                $numero = (int) substr($cor->corte, 1);
+                $nuevoNumero = $numero + 1;
+            } else {
+                $nuevoNumero = 1;
+            }
+
+            $longitudMaxima = 7;
+            $nuevoCorrelativo = 'Z' . str_pad($nuevoNumero, $longitudMaxima, '0', STR_PAD_LEFT);
+
+            $corte = Cortes::create([
+                'caja' => session('caja'),
+                'sucursal' => session('sucursal'),
+                'empresa' => session('empresa'),
+                'corte' => $nuevoCorrelativo,
+                'fecha' => $this->fechaApertura,
+                'hora' => $this->horaApertura,
+                'estado' => 'Activo',
+                'efectivo' => 0,
+                'tarjeta' => 0,
+                'cheque' => 0,
+                'credito' => 0,
+                'subtotalPagos' => 0,
+                'devoluciones' => 0,
+                'anulaciones' => 0,
+                'percepcion' => 0,
+                'sumaTotales' => 0,
+                'ticketDesde' => 0,
+                'ticketHasta' => 0,
+                'gravadosT' => 0,
+                'ivaT' => 0,
+                'subT' => 0,
+                'totalT' => 0,
+                'consumidorDesde' => 0,
+                'consumidorHasta' => 0,
+                'gravadosCon' => 0,
+                'ivaCon' => 0,
+                'subCon' => 0,
+                'totalCon' => 0,
+                'CreDesde' => 0,
+                'CreHasta' => 0,
+                'gravadosCre' => 0,
+                'ivaCre' => 0,
+                'subCre' => 0,
+                'totalCre' => 0,
+                'dteDesde' => 0,
+                'dteHasta' => 0,
+                'gravadosDTE' => 0,
+                'ivaDTE' => 0,
+                'subDTE' => 0,
+                'totalDTE' => 0,
+                'creditosDesde' => 0,
+                'creditosHasta' => 0,
+                'gravadosCredi' => 0,
+                'ivaCredi' => 0,
+                'subCredi' => 0,
+                'totalCredi' => 0,
+                'totalGeneral' => 0,
+                'ivaGeneral' => 0,
+                'subGeneral' => 0,
+                'totalPercepcion' => 0,
+                'totalGlobal' => 0,
+            ]);
+
+            $this->resetUIApertura();
+            return redirect()->route('pos');
+            $this->emit('item-added', 'Caja Aperturada');
+        }
+    }
+
+    public function resetUIApertura()
+    {
+        $this->fechaApertura = '';
+        $this->horaApertura = '';
+        $this->montoApertura = '';
+    }
+
+    protected $listeners = [
+        //'scan-code' => 'ScanCode',
+        'removeItem' => 'removeItem',
+        'clearCart' => 'clearCart',
+        'Store' => 'Store',
+        'scan-code-byid' => 'ScanCodeById',
+        'print-ticket' => 'printTicket',
+        'save-clientes' => 'SaveClientes',
+        'Add' =>'ScanCode'
+    ];
+
+    public function ScanCode($barcode, $cant = 1)
+    {
+        //dd($barcode);
+        $p = Precios::find($barcode);
+        $product = Productos::join('precios as p', 'productos.id', '=', 'p.producto')
+            ->join('inventarios as i', 'i.producto', 'productos.id')
+            ->where('p.id',  $p->id )
+            //->where('p.cantidad', 1)
+            ->where('i.sucursal', session('sucursal'))
+            ->select('productos.id', 'productos.nombreProducto', 'i.existencia', 'p.codebar', 'i.id as inventario', 'p.pvventa', 'p.cantidad', 'i.sucursal', 'p.presentacion', 'p.cantidad as descargar', 'p.medida')
+            ->first();
+
+
+        if ($product == null) {
+            $this->emit('scan-notfound', 'El producto no encontrado');
+        } else {
+            $user_id = Auth::user()->id;
+            $price = $p->pvventa;
+            $des = Descuentos::where('producto', $product->id)
+                ->where('inicio', '<=', Carbon::today()->endOfDay())
+                ->where('fin', '>=', Carbon::today()->startOfDay())
+                ->latest('created_at')
+                ->first();
+
+            if ($des) {
+                $descuento = ($price * $des->descuento) / 100;
+                $sub = $price - $descuento;
+            } else {
+                $descuento = 0;
+                $sub = $price;
+            }
+
+            $existingCartItem = tmpVentas::where('producto', $product->id)
+            ->where('user', $user_id)
+            ->where('sucursal', session('sucursal'))
+            ->first();
+
+            if ($existingCartItem)
+            {
+                if ($existingCartItem->descargar + $cant > $product->existencia) {
+                    $this->emit('scan-notfound', 'Stock insuficiente');
+                }
+                else
+                {
+                    $existingCartItem->quantity = $existingCartItem->quantity + $cant;
+                    $existingCartItem->total = ($existingCartItem->quantity) * $existingCartItem->price;
+                    $existingCartItem->descargar = ($existingCartItem->quantity + $cant) * $existingCartItem->limit;
+                    $existingCartItem->save();
+                    $this->CantiUpdate($product->id, $existingCartItem->id);
+                }
+            }
+            else
+            {
+                //dd($cant * $product->descargar + $cant);
+                if ($cant > $product->existencia) {
+                    $this->emit('scan-notfound', 'Stock insuficiente');
+                }
+                else
+                {
+                    $tmp =tmpVentas::create([
+                        'producto' => $product->id,
+                        'name' => $product->nombreProducto,
+                        'price' => $sub,
+                        'quantity' => $cant,
+                        'sucursal' => $product->sucursal,
+                        'codebar' => $product->codebar,
+                        'descuento' => $descuento,
+                        'total' => $sub * $cant,
+                        'medida' => $product->presentacion,
+                        'limit' => $product->descargar,
+                        'descargar' => $cant * $product->descargar,
+                        'uni' => $product->medida,
+                        'user' => $user_id,
+                        'caja' => session('caja'),
+                        'empresa' => session('empresa'),
+                        'esenario' => 1
+                    ]);
+                    //$this->CantiUpdate($product->id, $tmp->id);
+                }
+            }
+            $this->Carrito();
+        }
+    }
+    ////////////para la escala de prodcutos
+    public function CantiUpdate($id, $tmp)
+    {
+
+        $user_id = Auth::user()->id;
+        $items = tmpVentas::find($tmp);
+
+        $bus = Precios::where('producto', $id)
+            ->where('codebar', $items->codebar)
+            ->where('cantidad', '<', $items->quantity)
+            ->orderBy('cantidad', 'desc')
+            ->first();
+
+        // Si no se encuentra en la escala más baja, hacer una segunda consulta
+        if (!$bus) {
+            $bus = Precios::where('producto', $id)
+                ->where('codebar', $items->codebar)
+                ->where('cantidad', '>=', $items->quantity)
+                ->orderBy('cantidad', 'asc')
+                ->first();
+        }
+
+        $items->price = $bus->pventasiva;
+        //$items->quantity = $this->can[$tmp];
+        $items->total = $items->quantity * $bus->pventasiva;
+        $items->limit = $bus->cantidad;
+        $items->descargar = $bus->cantidad * $items->quantity;
+        $items->save();
+
+        $this->Carrito();
+    }
+
+    ////////para actualizar la cantidad del detalle/////////
+    public function updateCanti($id)
+    {
+        $user_id = Auth::user()->id;
+
+        $tmp = tmpVentas::find($id);
+        // Obtener el producto junto con su inventario
+        $product = Productos::join('inventarios as i', 'i.producto', 'productos.id')
+        ->where('sucursal', session('sucursal'))
+        ->find($tmp->producto);
+        // Cantidad solicitada
+        $cantidades = $this->can[$id];
+
+        // Verificar si hay suficiente stock
+        if ($cantidades > $product->existencia) {
+            $this->emit('scan-notfound', 'Stock insuficiente');
+        } else {
+            // Buscar descuento si aplica
+            $des = Descuentos::where('producto', $tmp->producto)
+                ->where('inicio', '<=', now())
+                ->where('fin', '>=', now())
+                ->latest('created_at')
+                ->first();
+
+            if ($des) {
+                $descuento = ($tmp->price * $des->descuento) / 100;
+                $sub = $tmp->price - $descuento;
+            } else {
+                $descuento = 0;
+                $sub = $tmp->price;
+            }
+
+            $tmp->descargar = $tmp->limit * $cantidades;
+            $tmp->quantity = $cantidades;
+            $tmp->total = $cantidades * $sub;
+            $tmp->save();
+            $this->UpdateEscala($tmp->producto, $tmp->id);
+            $this->Carrito();
+        }
+    }
+
+    //////////actualiza la medida para los precios
+    public function updateUni($id)
+    {
+        // Imprime el valor actual del select para asegurarte de que se está actualizando
+        if (!isset($this->uni[$id])) {
+            return;
+        }
+
+        // Muestra el valor seleccionado del select para este $id
+        $selectedValue = $this->uni[$id];
+        //dd($selectedValue); // Verifica el valor seleccionado
+
+        // Busca el dato en la tabla temporal tmpVentas
+        $datos = tmpVentas::find($id);
+
+        if (!$datos) {
+            return;
+        }
+        // Busca el precio en la tabla de precios basado en la medida seleccionada
+        $precios = Precios::find($selectedValue);
+
+        if (!$precios) {
+            return;
+        }
+
+        // Resto del proceso de actualización
+        $descargar = $precios->cantidad * $datos->quantity;
+
+        $exis = Inventarios::where('producto', $datos->producto)
+                            ->where('sucursal', session('sucursal'))
+                            ->first();
+
+        if ($exis && $exis->existencia >= $descargar) {
+            $medida = Medidas::find($precios->medida);
+
+            $datos->price = $precios->pvventa;
+            $datos->limit = $precios->cantidad;
+            $datos->descargar = $descargar;
+            $datos->total = $precios->pvventa * $datos->quantity;
+            $datos->medida = $medida->unidad;
+            $datos->uni = $precios->medida;
+            $datos->save();
+
+            // Actualiza el carrito después de guardar los cambios
+            $this->carrito();
+        } else {
+            $this->emit('scan-notfound', 'Stock insuficiente');
+        }
+    }
+
+
+    //////escala de precios al actualizar la cantidad
+    public function UpdateEscala($id, $tmp)
+    {
+
+        $user_id = Auth::user()->id;
+        $items = tmpVentas::find($tmp);
+
+        $bus = Precios::where('producto', $id)
+            ->where('codebar', $items->codebar)
+            ->where('cantidad', '<=', $items->quantity)
+            ->where('medida', $items->uni)
+            ->orderBy('cantidad', 'desc')
+            ->first();
+
+        // Si no se encuentra en la escala más baja, hacer una segunda consulta
+        if (!$bus) {
+            $bus = Precios::where('producto', $id)
+                ->where('codebar', $items->codebar)
+                ->where('cantidad', '>=', $items->quantity)
+                ->where('medida', $items->uni)
+                ->orderBy('cantidad', 'asc')
+                ->first();
+        }
+
+        $items->price = $bus->pvventa;
+        //$items->quantity = $this->can[$tmp];
+        $items->total = $items->quantity * $bus->pvventa;
+        //$items->limit = $items->cantidad;
+        //$items->descargar = $items->limit * $items->quantity;
+        $items->save();
+
+        $this->Carrito();
+    }
+
+    public function removeItem($id)
+    {
+        $tmp = tmpVentas::find($id);
+        $tmp->delete();
+        $this->Carrito();
+    }
+
+    public function SaveClientes()
+    {
+        $rules = [
+            'nombreCliente' => 'required|min:3',
+            'dui' => 'required|unique:clientes',
+            'correo' => 'required|email',
+            'celular' => 'required',
+            'departamento' => 'required|not_in:Elegir',
+            'municipio' => 'required|not_in:Elegir',
+        ];
+
+        $messages = [
+            'nombreCliente.required' => 'Nombre del Cliente es requerido',
+            'nombreCliente.min' => 'El Nombre del cliente debe tener más de 3 caracteres',
+            'dui.required' => 'El número de DUI es requerido',
+            'dui.unique' => 'El número de DUI ya está registrado',
+            'correo.required' => 'El correo electrónico del cliente es requerido',
+            'correo.email' => 'El formato del correo electrónico no es válido',
+            'celular.required' => 'El número de celular del cliente es requerido',
+            'departamento.required' => 'El departamento es requerido',
+            'departamento.not_in' => 'Por favor, elige un valor diferente a "Elegir" en el departamento',
+            'municipio.required' => 'El municipio es requerido',
+            'municipio.not_in' => 'Por favor, elige un valor diferente a "Elegir" en el municipio',
+        ];
+        //dd('entra');
+        $this->validate($rules, $messages);
+
+        $cli = Clientes::create([
+            'nombreCliente' => strtoupper($this->nombreCliente),
+            'tipoPersona' => $this->tipoPersona,
+            'dui' => $this->dui,
+            'nit' => $this->nit,
+            'homologado' => $this->homologado,
+            'registro' => $this->registro,
+            'giro' => strtoupper($this->clienteAddSelectName),
+            'direccion' => strtoupper($this->direccion),
+            'telefono' => $this->telefono,
+            'departamento' => $this->departamento,
+            'municipio' => $this->municipio,
+            'distrito' => $this->distrito,
+            'actividad' => $this->clienteAddSelectId,
+            'idenReceptor' => $this->idenReceptor,
+            'celular' => $this->celular,
+            'email' => $this->correo,
+            'desActividad' => strtoupper($this->clienteAddSelectName)
+        ]);
+
+        $this->resetUICliente();
+        $this->emit('item-added', 'Cliente registrado');
+    }
+
+    public function resetUICliente()
+    {
+        $this->nombreCliente = '';
+        $this->direccion = '';
+        $this->departamento = 'Elegir';
+        $this->municipio = 'Elegir';
+        $this->dui = '';
+        $this->nit = '';
+        $this->registro = '';
+        $this->giro = '';
+        $this->correo = '';
+        $this->telefono = '';
+        $this->celular = '';
+        $this->tipoCliente = 'Elegir';
+    }
+
+    public function Cash()
+    {
+        $user_id = Auth::user()->id;
+
+        $this->cambio = floatval($this->efectivo) - $this->total;
+    }
+
+    public function SaveTicket()
+    {
+        $rules = [
+            'metodo' => 'required',
+        ];
+
+        $messages = [
+            'metodo.required' => 'Seleccione un metodo diferente de Elegir',
+        ];
+
+        $this->validate($rules, $messages);
+
+        $cartItems = tmpVentas::where('user', Auth::user()->id)
+        ->where('caja', session('caja'))
+        ->where('esenario', 1)
+        ->get();
+        $totales = $cartItems->sum('total');
+        $descuentos = $cartItems->sum('descuento');
+
+
+        $this->itemsQuantity = $cartItems->sum('quantity');
+        $sub = $totales;
+        $tiva = $sub - $sub / 1.13;
+        $tt = $sub - $tiva;
+
+        $percecion = 0;
+
+        if ($this->metodo == 4) {
+            $estado = 'Credito';
+        } else {
+            $estado = 'Cancelado';
+        }
+
+        $para = Parametros::find(session('caja'));
+        $correlativo = $para->tcorrelativo;
+        if($para->dte == "Si" && $para->tiquedte == '1')
+        {
+            $control = $this->obtenerCodigoDTE(1);
+            $this->GenerarToken();
+            $codigoGeneracion = strtoupper(Str::uuid()->toString());
+            $fechaHoy = Carbon::now()->toDateString();
+            $tokenActivo = Tocken::where('estado', 'ok')->whereDate('fecha', $fechaHoy)->first();
+            $tipo = 'DTE';
+        }
+        else
+        {
+            $control = NULL;
+            $codigoGeneracion = NULL;
+            $tipo = 'Fisico';
+
+        }
+        try {
+            DB::beginTransaction();
+            $ingre = Ventas::create([
+                'cliente' => 1,
+                'tipoPago' => $this->metodo,
+                'facturador' => 1,
+                'correlativo' => $correlativo,
+                'fecha' => date('Y-m-d'),
+                'hora' => date('H:i:s'),
+                'tipo' => $tipo,
+                'codigo' => $codigoGeneracion,
+                'numero' => $control,
+                'sello' => '',
+                'vendedor' => Auth::user()->id,
+                'caja' => session('caja'),
+                'sucursal' => session('sucursal'),
+                'empresa' => session('empresa'),
+                'subtotal' => $sub,
+                'descuento' => $descuentos,
+                'iva' => $tiva,
+                'percepcion' => $percecion,
+                'total' => $sub,
+                'estado' => $estado,
+                'qr' => '',
+            ]);
+
+            if ($ingre) {
+                $items = tmpVentas::where('user', Auth::user()->id)
+                ->where('caja', session('caja'))
+                ->where('esenario', 1)
+                ->get();
+
+                foreach ($items as $item) {
+                    $subb = $item->price - $item->descuento;
+                    $iva = $subb - $subb / 1.13;
+                    $ttt = $subb - $iva;
+
+                    VentasDetalles::create([
+                        'venta' => $ingre->id,
+                        'producto' => $item->producto,
+                        'medida' => $item->uni,
+                        'unidad' => $item->medida,
+                        'descargar' => $item->descargar,
+                        'cantidad' => $item->quantity,
+                        'precio' => $item->price,
+                        'descuento' => $item->descuento,
+                        'subtotal' => $subb * $item->quantity,
+                        'iva' => $iva * $item->quantity,
+                        'total' => ($ttt + $iva) * $item->quantity,
+                    ]);
+
+                    ///descargar del inventario
+                    $in = Inventarios::where('producto', $item->producto)
+                        ->where('sucursal', session('sucursal'))
+                        ->where('empresa', session('empresa'))
+                        ->first();
+                    $newStock = $in->existencia - $item->descargar;
+
+                    $in->existencia = $newStock;
+                    $in->save();
+
+                    /////ingreso al kardex/////////////////
+                    $p = Precios::where('producto', $item->producto)
+                        ->where('medida', $item->uni)
+                        ->first();
+
+                    $des = 'Venta con tikect numero ' . $correlativo;
+                    $kardex = Kardex::create([
+                        'producto' => $item->producto,
+                        'inventario' => $in->id,
+                        'descripcion' => $des,
+                        'fecha' => date('Y-m-d'),
+                        'hora' => date('H:i:s'),
+                        'ingresoCantidad' => 0,
+                        'ingresoValor' => 0,
+                        'egresoCantidad' => $item->descargar,
+                        'egresoValor' => $p->costociva * $item->descargar,
+                        'saldoCantidad' => $newStock,
+                        'saldoValor' => $newStock * $p->costociva,
+                    ]);
+                }
+                //////agregar los datos a caja///////////
+                $corte = Cortes::where('caja', session('caja'))
+                ->where('sucursal', session('sucursal'))
+                ->where('empresa', session('empresa'))
+                ->where('fecha', date('Y-m-d'))->select('id')->first();
+
+                $ca = Caja::create([
+                    'caja' => session('caja'),
+                    'sucursal' => session('sucursal'),
+                    'empresa' => session('empresa'),
+                    'corte' => $corte->id,
+                    'venta' => $ingre->id,
+                    'facturador' => 1,
+                    'tipoPago' => $this->metodo,
+                    'correlativo' => $correlativo,
+                    'codigo' => $codigoGeneracion,
+                    'numero' => $control,
+                    'sello' => null,
+                    'fecha' => date('Y-m-d'),
+                    'hora' => date('H:i:s'),
+                    'cajero' => Auth::user()->id,
+                    'comprobante' => $this->comprobante,
+                    'efectivo' => $this->efectivo,
+                    'cambio' => $this->cambio,
+                    'subtotal' => $sub,
+                    'descuento' => $descuentos,
+                    'iva' => $tiva,
+                    'percepcion' => $percecion,
+                    'total' => $sub,
+                    'estado' => $estado,
+                    'arqueado' => false
+                ]);
+                $ambiente = AmbienteDestino::where('status', 'Activo')->first();
+                $tipoDte = TipoDocumento::where('status', 'Activo')->where('valor', 'FACTURA')->first();
+                $tipoModelo = ModeloFacturacion::where('status', 'Activo')->first();
+                $tipoOpera = TipoTransmision::where('status', 'Activo')->first();
+                $tipoContingencia = TipoContigencia::where('status', 'Activo')->whereNull('codigo')->first();
+                $tributo = Tributo::where('status', 'Activo')->whereNull('codigo')->first();
+                $condipago = $this->metodo == 4 ? 2 : 1;
+
+                if($para->dte == 'Si' && $para->tiquedte == '1')
+                {
+                    $dte = dte::create([
+                        'motivoContin' => null,
+                        'version' => 1,
+                        'ambiente' => $ambiente->id,
+                        'tipoDte' => $tipoDte->id,
+                        'numeroControl' => $control,
+                        'codigoGeneracion' => $codigoGeneracion,
+                        'tipoModelo' => $tipoModelo->id,
+                        'tipoOperacion' => $tipoOpera->id,
+                        'tipoContingencia' => $tipoContingencia->id,
+                        'fecEmi' => date('Y-m-d'),
+                        'horEmi' => date('H:i:s'),
+                        'tipoMoneda' => 'USD',
+                        'documentoRelacionado' => null,
+                        'emisor' => session('sucursal'),
+                        'receptor' => 1,
+                        'otrosDocuentos' => null,
+                        'ventaTercero' => null,
+                        'venta' => $ingre->id,
+                        'tocken' => $tokenActivo->id,
+                        'sello' => null,
+                        'estado' => 'Creado',
+                        'jsonDte' => null,
+                        'caja' => session('caja'),
+                        'sucursal' => session('sucursal'),
+                        'empresa' => session('empresa'),
+                    ]);
+                    $detalleDTE = resumenDte::create([
+                        'dte' => $dte->id,
+                        'totalNoSuj' => 0,
+                        'totalExenta' => 0,
+                        'totalGravada' => $sub,
+                        'totalIva' => $tiva,
+                        'subTotalVentas' => $sub,
+                        'descuNoSuj' => 0,
+                        'descuExenta' => 0,
+                        'descuGravada' => 0,
+                        'porcentajeDescuento' => 0,
+                        'totalDescu' => $descuentos,
+                        'tributo' => $tributo->id,
+                        'codigo' => null,
+                        'descripcion' => null,
+                        'valor' => null,
+                        'subTotal' => $sub,
+                        'ivaPerci1' => $percecion,
+                        'ivaRete1' => 0,
+                        'reteRenta' => 0,
+                        'montoTotalOperacion' => $sub - $percecion,
+                        'totalNoGravado' => 0,
+                        'totalPagar' => $sub - $percecion,
+                        'totalLetras' => strtoupper(Convertidor::montoALetras($sub - $percecion)),
+                        'saldoFavor' => 0,
+                        'condicionOperacion' => $condipago,
+                        'pagos' => $this->metodo,
+                        'montoPagado' => null,
+                        'refencia' => null,
+                        'palzo' => null,
+                        'periodo' => null,
+                        'numPagoElectronico' => null,
+                    ]);
+
+                    if($para->dteAutomatico == 'Si')
+                    {
+                        $json = $this->GeneraJsonF($dte->id);
+                        $this->RecepcionDTEF($dte->id);
+                    }
+                }
+
+                $this->resetPago();
+            }
+
+            ///actualizo el nuevo correlativo
+            $para->tcorrelativo = $correlativo + 1;
+            $para->save();
+
+            DB::commit();
+            $this->ImprimirTicket($ca->id);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            //session()->flash('error', $e->getMessage());
+            $this->emit('item-error', $e->getMessage());
+        }
+    }
+
+    public function SaveConsumidor()
+    {
+        $rules = [
+            'metodo' => 'required',
+            'idC' =>'Required'
+        ];
+
+        $messages = [
+            'metodo.required' => 'Seleccione un metodo diferente de Elegir',
+            'idC.required' => 'No ha seleccionado un cliente para guardar esta venta'
+        ];
+
+        $this->validate($rules, $messages);
+
+        $cartItems = tmpVentas::where('user', Auth::user()->id)
+        ->where('caja', session('caja'))
+        ->where('esenario', 1)
+        ->get();
+        $totales = $cartItems->sum('total');
+        $descuentos = $cartItems->sum('descuento');
+
+
+        $this->itemsQuantity = $cartItems->sum('quantity');
+        $sub = $totales;
+        $tiva = $sub - $sub / 1.13;
+        $tt = $sub - $tiva;
+
+        $c = Clientes::find($this->idC);
+
+        if($c->tipoPersona == 3)
+        {
+            $percecion = $tt * 0.01;
+        }
+        else
+        {
+            $percecion = 0;
+        }
+
+        if ($this->metodo == 4) {
+            $estado = 'Credito';
+        } else {
+            $estado = 'Cancelado';
+        }
+
+        //$para = Parametros::find(session('caja'));
+        //$correlativo = $para->concorrelativo;
+
+        $para = Parametros::find(session('caja'));
+        $correlativo = empty($this->correlativo) ? $para->concorrelativo : $this->correlativo;
+
+        $fecha = empty($this->fecha) ? now()->format('Y-m-d') : $this->fecha;
+
+
+
+        if($para->dte == "Si")
+        {
+            $control = $this->obtenerCodigoDTE(1);
+            $this->GenerarToken();
+            $codigoGeneracion = strtoupper(Str::uuid()->toString());
+            $fechaHoy = Carbon::now()->toDateString();
+            $tokenActivo = Tocken::where('estado', 'ok')->whereDate('fecha', $fechaHoy)->first();
+            $tipo = 'DTE';
+        }
+        else
+        {
+            $control = NULL;
+            $codigoGeneracion = NULL;
+            $tipo = 'Fisico';
+
+        }
+
+        try {
+            DB::beginTransaction();
+            $ingre = Ventas::create([
+                'cliente' => $this->idC,
+                'tipoPago' => $this->metodo,
+                'facturador' => 2,
+                'correlativo' => $correlativo,
+                'fecha' => $fecha,
+                'hora' => date('H:i:s'),
+                'tipo' => $tipo,
+                'codigo' => $codigoGeneracion,
+                'numero' => $control,
+                'sello' => '',
+                'vendedor' => Auth::user()->id,
+                'caja' => session('caja'),
+                'sucursal' => session('sucursal'),
+                'empresa' => session('empresa'),
+                'subtotal' => $sub,
+                'descuento' => $descuentos,
+                'iva' => $tiva,
+                'percepcion' => $percecion,
+                'total' => $sub - $percecion,
+                'estado' => $estado,
+                'qr' => '',
+            ]);
+
+            if ($ingre) {
+                foreach ($cartItems as $item) {
+                    $subb = $item->price - $item->descuento;
+                    $iva = $subb - $subb / 1.13;
+                    $ttt = $subb - $iva;
+
+                    VentasDetalles::create([
+                        'venta' => $ingre->id,
+                        'producto' => $item->producto,
+                        'medida' => 1,
+                        'unidad' => $item->medida,
+                        'descargar' => $item->descargar,
+                        'cantidad' => $item->quantity,
+                        'precio' => $item->price,
+                        'descuento' => $item->descuento,
+                        'subtotal' => $subb * $item->quantity,
+                        'iva' => $iva * $item->quantity,
+                        'total' => ($ttt + $iva) * $item->quantity,
+                    ]);
+
+                    ///descargar del inventario
+                    $in = Inventarios::where('producto', $item->producto)
+                        ->where('sucursal', session('sucursal'))
+                        ->where('empresa', session('empresa'))
+                        ->first();
+                    $newStock = $in->existencia - $item->descargar;
+
+                    $in->existencia = $newStock;
+                    $in->save();
+
+                    /////ingreso al kardex/////////////////
+                    $p = Precios::where('producto', $item->producto)
+                        ->where('presentacion', $item->medida)
+                        ->first();
+
+                    $des = 'Venta con tikect numero ' . $correlativo;
+                    $kardex = Kardex::create([
+                        'producto' => $item->producto,
+                        'inventario' => $in->id,
+                        'descripcion' => $des,
+                        'fecha' => date('Y-m-d'),
+                        'hora' => date('H:i:s'),
+                        'ingresoCantidad' => 0,
+                        'ingresoValor' => 0,
+                        'egresoCantidad' => $item->descargar,
+                        'egresoValor' => $p->costociva * $item->descargar,
+                        'saldoCantidad' => $newStock,
+                        'saldoValor' => $newStock * $p->costociva,
+                    ]);
+                }
+                //////agregar los datos a caja///////////
+
+                $corte = Cortes::where('caja', session('caja'))->where('sucursal', session('sucursal'))->where('empresa', session('empresa'))->where('fecha', date('Y-m-d'))->select('id')->first();
+
+                $ca = Caja::create([
+                    'caja' => session('caja'),
+                    'sucursal' => session('sucursal'),
+                    'empresa' => session('empresa'),
+                    'corte' => $corte->id,
+                    'venta' => $ingre->id,
+                    'facturador' => 2,
+                    'tipoPago' => $this->metodo,
+                    'correlativo' => $correlativo,
+                    'codigo' => $codigoGeneracion,
+                    'numero' => $control,
+                    'sello' => null,
+                    'fecha' => $fecha,
+                    'hora' => date('H:i:s'),
+                    'cajero' => Auth::user()->id,
+                    'comprobante' => $this->comprobante,
+                    'efectivo' => $this->efectivo,
+                    'cambio' => $this->cambio,
+                    'subtotal' => $sub,
+                    'descuento' => $descuentos,
+                    'iva' => $tiva,
+                    'percepcion' => $percecion,
+                    'total' => $sub - $percecion,
+                    'estado' => $estado,
+                    'arqueado' => false
+                ]);
+                $ambiente = AmbienteDestino::where('status', 'Activo')->first();
+                $tipoDte = TipoDocumento::where('status', 'Activo')->where('valor', 'FACTURA')->first();
+                $tipoModelo = ModeloFacturacion::where('status', 'Activo')->first();
+                $tipoOpera = TipoTransmision::where('status', 'Activo')->first();
+                $tipoContingencia = TipoContigencia::where('status', 'Activo')->whereNull('codigo')->first();
+                $tributo = Tributo::where('status', 'Activo')->whereNull('codigo')->first();
+                $condipago = $this->metodo == 4 ? 2 : 1;
+                if($para->dte == "Si")
+                {
+                $dte = dte::create([
+                    'motivoContin' => null,
+                    'version' => 1,
+                    'ambiente' => $ambiente->id,
+                    'tipoDte' => $tipoDte->id,
+                    'numeroControl' => $control,
+                    'codigoGeneracion' => $codigoGeneracion,
+                    'tipoModelo' => $tipoModelo->id,
+                    'tipoOperacion' => $tipoOpera->id,
+                    'tipoContingencia' => $tipoContingencia->id,
+                    'fecEmi' => date('Y-m-d'),
+                    'horEmi' => date('H:i:s'),
+                    'tipoMoneda' => 'USD',
+                    'documentoRelacionado' => null,
+                    'emisor' => session('sucursal'),
+                    'receptor' => $this->idC,
+                    'otrosDocuentos' => null,
+                    'ventaTercero' => null,
+                    'venta' => $ingre->id,
+                    'tocken' => $tokenActivo->id,
+                    'sello' => null,
+                    'estado' => 'Creado',
+                    'jsonDte' => null,
+                    'caja' => session('caja'),
+                    'sucursal' => session('sucursal'),
+                    'empresa' => session('empresa'),
+                ]);
+                $detalleDTE = resumenDte::create([
+                    'dte' => $dte->id,
+                    'totalNoSuj' => 0,
+                    'totalExenta' => 0,
+                    'totalGravada' => $sub,
+                    'totalIva' => $tiva,
+                    'subTotalVentas' => $sub,
+                    'descuNoSuj' => 0,
+                    'descuExenta' => 0,
+                    'descuGravada' => 0,
+                    'porcentajeDescuento' => 0,
+                    'totalDescu' => $descuentos,
+                    'tributo' => $tributo->id,
+                    'codigo' => null,
+                    'descripcion' => null,
+                    'valor' => null,
+                    'subTotal' => $sub,
+                    'ivaPerci1' => 0,
+                    'ivaRete1' => 0,
+                    'reteRenta' => $percecion,
+                    'montoTotalOperacion' => $sub,
+                    'totalNoGravado' => 0,
+                    'totalPagar' => $sub - $percecion,
+                    'totalLetras' => strtoupper(Convertidor::montoALetras($sub - $percecion)),
+                    'saldoFavor' => 0,
+                    'condicionOperacion' => $condipago,
+                    'pagos' => $this->metodo,
+                    'montoPagado' => null,
+                    'refencia' => null,
+                    'palzo' => null,
+                    'periodo' => null,
+                    'numPagoElectronico' => null,
+                ]);
+
+                if($para->dteAutomatico == 'Si')
+                    {
+                        $json = $this->GeneraJsonF($dte->id);
+                        $this->RecepcionDTEF($dte->id);
+                    }
+
+                }
+                $this->resetPago();
+                $this->Carrito();
+
+                ///actualizo el nuevo correlativo
+                $para->concorrelativo = $correlativo + 1;
+                $para->save();
+            }
+            DB::commit();
+            $this->ImprimirTicket($ca->id);
+            //$this->emit('item-added', 'Consumidor Final Creado')
+        } catch (\Exception $e) {
+            DB::rollBack();
+            //session()->flash('error', $e->getMessage());
+            $this->emit('item-error', $e->getMessage());
+        }
+    }
+
+    public function SaveFiscal()
+    {
+        $rules = [
+            'metodo' => 'required',
+            'idC' =>'Required'
+        ];
+
+        $messages = [
+            'metodo.required' => 'Seleccione un metodo diferente de Elegir',
+            'idC.required' => 'No ha seleccionado un cliente para guardar esta venta'
+        ];
+
+        $this->validate($rules, $messages);
+
+        $cartItems = tmpVentas::where('user', Auth::user()->id)
+        ->where('caja', session('caja'))
+        ->where('esenario', 1)
+        ->get();
+        $totales = $cartItems->sum('total');
+        $descuentos = $cartItems->sum('descuento');
+
+
+        $this->itemsQuantity = $cartItems->sum('quantity');
+        $sub = $totales;
+        $tiva = $sub - $sub / 1.13;
+        $tt = $sub - $tiva;
+
+        if ($this->metodo == 4) {
+            $estado = 'Credito';
+        } else {
+            $estado = 'Cancelado';
+        }
+
+        $para = Parametros::find(session('caja'));
+        $correlativo = empty($this->correlativo) ? $para->crecorrelativo : $this->correlativo;
+
+        $fecha = empty($this->fecha) ? now()->format('Y-m-d') : $this->fecha;
+
+        if($para->dte == "Si")
+        {
+            $control = $this->obtenerCodigoDTE(2);
+            $this->GenerarToken();
+            $codigoGeneracion = strtoupper(Str::uuid()->toString());
+            $fechaHoy = Carbon::now()->toDateString();
+            $tokenActivo = Tocken::where('estado', 'ok')->whereDate('fecha', $fechaHoy)->first();
+            $tipo = 'DTE';
+        }
+        else
+        {
+            $control = NULL;
+            $codigoGeneracion = NULL;
+            $tipo = 'Fisico';
+
+        }
+
+        try {
+            DB::beginTransaction();
+            $ingre = Ventas::create([
+                'cliente' => $this->idC,
+                'tipoPago' => $this->metodo,
+                'facturador' => 3,
+                'correlativo' => $correlativo,
+                'fecha' => $fecha,
+                'hora' => date('H:i:s'),
+                'tipo' => $tipo,
+                'codigo' => $codigoGeneracion,
+                'numero' => $control,
+                'sello' => '',
+                'vendedor' => Auth::user()->id,
+                'caja' => session('caja'),
+                'sucursal' => session('sucursal'),
+                'empresa' => session('empresa'),
+                'subtotal' => $sub,
+                'descuento' => $descuentos,
+                'iva' => $tiva,
+                'total' => $sub,
+                'estado' => $estado,
+                'qr' => '',
+            ]);
+
+            if ($ingre) {
+
+                foreach ($cartItems as $item) {
+                    $subb = $item->price - $item->descuento;
+                    $iva = $subb - $subb / 1.13;
+                    $ttt = $subb - $iva;
+
+                    VentasDetalles::create([
+                        'venta' => $ingre->id,
+                        'producto' => $item->producto,
+                        'medida' => 1,
+                        'unidad' => $item->medida,
+                        'descargar' => $item->descargar,
+                        'cantidad' => $item->quantity,
+                        'precio' => $item->price,
+                        'descuento' => $item->descuento,
+                        'subtotal' => $subb * $item->quantity,
+                        'iva' => $iva * $item->quantity,
+                        'total' => ($ttt + $iva) * $item->quantity,
+                    ]);
+
+                    ///descargar del inventario
+                    $in = Inventarios::where('producto', $item->producto)
+                        ->where('sucursal', session('sucursal'))
+                        ->where('empresa', session('empresa'))
+                        ->first();
+                    $newStock = $in->existencia - $item->descargar;
+
+                    $in->existencia = $newStock;
+                    $in->save();
+
+                    /////ingreso al kardex/////////////////
+                    $p = Precios::where('producto', $item->producto)
+                        ->where('presentacion', $item->medida)
+                        ->first();
+
+                    $des = 'Venta con tikect numero ' . $correlativo;
+                    $kardex = Kardex::create([
+                        'producto' => $item->id,
+                        'inventario' => $in->id,
+                        'descripcion' => $des,
+                        'fecha' => date('Y-m-d'),
+                        'hora' => date('H:i:s'),
+                        'ingresoCantidad' => 0,
+                        'ingresoValor' => 0,
+                        'egresoCantidad' => $item->descargar,
+                        'egresoValor' => $p->costociva * $item->descargar,
+                        'saldoCantidad' => $newStock,
+                        'saldoValor' => $newStock * $p->costociva,
+                    ]);
+                }
+                //////agregar los datos a caja///////////
+
+                $corte = Cortes::where('caja', session('caja'))->where('sucursal', session('sucursal'))->where('empresa', session('empresa'))->where('fecha', date('Y-m-d'))->select('id')->first();
+
+                $ca = Caja::create([
+                    'caja' => session('caja'),
+                    'sucursal' => session('sucursal'),
+                    'empresa' => session('empresa'),
+                    'corte' => $corte->id,
+                    'venta' => $ingre->id,
+                    'facturador' => 3,
+                    'tipoPago' => $this->metodo,
+                    'correlativo' => $correlativo,
+                    'codigo' => $codigoGeneracion,
+                    'numero' => $control,
+                    'sello' => null,
+                    'fecha' => $fecha,
+                    'hora' => date('H:i:s'),
+                    'cajero' => Auth::user()->id,
+                    'comprobante' => $this->comprobante,
+                    'efectivo' => $this->efectivo,
+                    'cambio' => $this->cambio,
+                    'subtotal' => $sub,
+                    'descuento' => $descuentos,
+                    'iva' => $tiva,
+                    'total' => $sub,
+                    'estado' => $estado,
+                    'arqueado' => false
+                ]);
+                $ambiente = AmbienteDestino::where('status', 'Activo')->first();
+                $tipoDte = TipoDocumento::where('status', 'Activo')->where('codigo', '03')->first();
+                $tipoModelo = ModeloFacturacion::where('status', 'Activo')->first();
+                $tipoOpera = TipoTransmision::where('status', 'Activo')->first();
+                $tipoContingencia = TipoContigencia::where('status', 'Activo')->whereNull('codigo')->first();
+                $tributo = Tributo::where('status', 'Activo')->whereNull('codigo')->first();
+                $condipago = $this->metodo == 4 ? 2 : 1;
+
+                $p = $sub - $tiva;
+
+                if($p > 100.00)
+                {
+                    $perce = number_format(0 * 0.01);
+                }
+                else
+                {
+                    $perce = 0.00;
+                }
+                if($para->dte == "Si")
+                {
+                    $dte = dte::create([
+                        'motivoContin' => null,
+                        'version' => 3,
+                        'ambiente' => $ambiente->id,
+                        'tipoDte' => $tipoDte->id,
+                        'numeroControl' => $control,
+                        'codigoGeneracion' => $codigoGeneracion,
+                        'tipoModelo' => $tipoModelo->id,
+                        'tipoOperacion' => $tipoOpera->id,
+                        'tipoContingencia' => $tipoContingencia->id,
+                        'fecEmi' => date('Y-m-d'),
+                        'horEmi' => date('H:i:s'),
+                        'tipoMoneda' => 'USD',
+                        'documentoRelacionado' => null,
+                        'emisor' => session('sucursal'),
+                        'receptor' => $this->idC,
+                        'otrosDocuentos' => null,
+                        'ventaTercero' => null,
+                        'venta' => $ingre->id,
+                        'tocken' => $tokenActivo->id,
+                        'sello' => null,
+                        'estado' => 'Creado',
+                        'jsonDte' => null,
+                        'caja' => session('caja'),
+                        'sucursal' => session('sucursal'),
+                        'empresa' => session('empresa'),
+                    ]);
+                    $detalleDTE = resumenDte::create([
+                        'dte' => $dte->id,
+                        'totalNoSuj' => 0,
+                        'totalExenta' => 0,
+                        'totalGravada' => $sub,
+                        'totalIva' => $tiva,
+                        'subTotalVentas' => $sub,
+                        'descuNoSuj' => 0,
+                        'descuExenta' => 0,
+                        'descuGravada' => 0,
+                        'porcentajeDescuento' => 0,
+                        'totalDescu' => $descuentos,
+                        'tributo' => $tributo->id,
+                        'codigo' => null,
+                        'descripcion' => null,
+                        'valor' => null,
+                        'subTotal' => $sub,
+                        'ivaPerci1' => $perce,
+                        'ivaRete1' => 0,
+                        'reteRenta' => 0,
+                        'montoTotalOperacion' => $sub,
+                        'totalNoGravado' => 0,
+                        'totalPagar' => $sub,
+                        'totalLetras' => strtoupper(Convertidor::montoALetras($sub + $perce)),
+                        'saldoFavor' => 0,
+                        'condicionOperacion' => $condipago,
+                        'pagos' => $this->metodo,
+                        'montoPagado' => null,
+                        'refencia' => null,
+                        'palzo' => null,
+                        'periodo' => null,
+                        'numPagoElectronico' => null,
+                    ]);
+
+                    if($para->dteAutomatico == 'Si')
+                    {
+                        $json = $this->GeneraJsonF($dte->id);
+                        $this->RecepcionDTEC($dte->id);
+                    }
+                }
+                $this->resetPago();
+                $this->Carrito();
+
+                ///actualizo el nuevo correlativo
+                $para->crecorrelativo = $correlativo + 1;
+                $para->save();
+            }
+            DB::commit();
+            $this->ImprimirTicket($ca->id);
+            //$this->emit('item-added', 'Consumidor Final Creado')
+        } catch (\Exception $e) {
+            DB::rollBack();
+            //session()->flash('error', $e->getMessage());
+            $this->emit('item-error', $e->getMessage());
+        }
+    }
+
+    public function resetPago()
+    {
+        $this->comprobante = '';
+        $this->efectivo = '';
+        $this->cambio = 0;
+        tmpVentas::where('user', Auth::user()->id)
+        ->where('caja', session('caja'))
+        ->where('esenario', 1)->delete();
+    }
+
+    public function printTicket($data)
+    {
+        //Log::info('Ejecutando printTicket con los datos: ' . $data);
+        //return Redirect::to("print://$data");
+    }
+
+    public function ImprimirTicket($id)
+    {
+        $this->emit('print-ticket', $this->TicketgetJsonBase64($id));
+    }
+
+    public function TicketgetJsonBase64($id)
+    {
+        $empresa = session('empresa');
+        $sucursal = session('sucursal');
+
+        $tipo = 'Tikect';
+
+        $caja = Caja::find($id);
+
+        $details = VentasDetalles::join('productos as p', 'p.id', 'ventas_detalles.producto')
+            ->join('medidas as m', 'm.id', 'p.medida')
+            ->select('p.nombreProducto as product', 'ventas_detalles.unidad as medida', 'ventas_detalles.cantidad', 'ventas_detalles.precio as costo', 'ventas_detalles.total')
+            ->where('ventas_detalles.venta', $caja->venta)
+            ->get();
+
+        $venta = Caja::join('parametros as p', 'p.id', 'cajas.caja')->join('cortes as c', 'c.id', 'cajas.corte')->join('users as s', 's.id', 'cajas.cajero')->select('cajas.fecha', 'cajas.hora', 'cajas.venta', 'cajas.correlativo', 'p.caja', 'c.corte', DB::raw('ROUND(cajas.subtotal, 2) as subtotal'), DB::raw('ROUND(cajas.descuento, 2) as descuento'), DB::raw('ROUND(cajas.total, 2) as total'), 's.name as cajero', DB::raw('ROUND(cajas.efectivo, 2) as efectivo'), DB::raw('ROUND(cajas.cambio, 2) as cambio'), 'p.tresolucion as resolucion', 'p.tserie as serie' )->find($id);
+
+        $company = Sucursales::join('empresas as e', 'e.id', 'sucursales.empresa')->select('e.empresa', 'e.registro', 'e.giro', 'e.nit', 'sucursales.direccion', 'e.razon')->find($sucursal);
+
+        $data = [
+            'tipo' => $tipo,
+        ];
+        //convertir a json
+        $json = "{\"tipo\":\"$tipo\"}|" . $details->toJson() . '|' . $venta->toJson() . '|' . $company->toJson();
+        //$json = json_encode($data);
+        //$final_json = str_replace(['{"', '":', ',"', '"}', '":null'], ['{', ':', ',', '}', ':""'], $json);
+        //dd($final_json = str_replace(',', '|', $final_json));
+        //encriptomi json
+        $crypted = base64_encode(gzdeflate($json));
+
+        return $crypted;
+    }
+
+    public function SaveRemesa()
+    {
+        $rules = [
+            'montoEnvio' => 'required|numeric|regex:/^\d+(\.\d{1,2})?$/',
+        ];
+
+        $messages = [
+            'montoEnvio.required' => 'Es necesario poner la cantidad a remesar',
+            'montoEnvio.numeric' => 'El monto debe ser un número',
+            'montoEnvio.regex' => 'El formato del monto no es válido. Debe tener hasta dos decimales.',
+        ];
+
+        $this->validate($rules, $messages);
+
+        $ultimoRegistro = Remesas::latest()->first();
+        $ultimoNumero = $ultimoRegistro ? $ultimoRegistro->numero + 1 : 1;
+
+        $remesa = Remesas::create([
+            'empresa' => session('empresa'),
+            'sucursal' => session('sucursal'),
+            'caja' => session('caja'),
+            'cajero' => Auth::user()->id,
+            'numero' => $ultimoNumero,
+            'fecha' => date('Y-m-d'),
+            'hora' => date('H:i:s'),
+            'monto' => $this->montoEnvio,
+            'validador' => Auth::user()->id,
+            'estado' => 'Remesado',
+        ]);
+        $this->ImprimirRemesa($remesa->id);
+    }
+
+    public function ImprimirRemesa($id)
+    {
+        $this->emit('print-ticket', $this->RemesagetJsonBase64($id));
+    }
+
+    public function RemesagetJsonBase64($id)
+    {
+        //dd($id);
+        $empresa = session('empresa');
+        $sucursal = session('sucursal');
+
+        $tipo = 'Remesa';
+
+        $details = Remesas::select('fecha as product', 'hora as cantidad', 'numero as costo', 'monto as total', 'estado as medida')
+        ->where('id', $id)
+        ->get();
+
+        $r = Remesas::find($id);
+
+        $encabezado = Caja::join('parametros as p', 'p.id', 'cajas.caja')->join('cortes as c', 'c.id', 'cajas.corte')->join('users as s', 's.id', 'cajas.cajero')->select('p.caja', 'c.corte', 's.name as cajero')
+        ->where('cajas.fecha', date('Y-m-d'))
+        ->where('cajas.cajero', $r->cajero)
+        ->first();
+
+        $company = Sucursales::join('empresas as e', 'e.id', 'sucursales.empresa')->select('e.empresa', 'e.registro', 'e.giro', 'e.nit', 'sucursales.direccion', 'e.razon')->find($sucursal);
+
+        $data = [
+            'tipo' => $tipo,
+        ];
+        //convertir a json
+        $json = "{\"tipo\":\"$tipo\"}|" . $details->toJson() . '|' . $encabezado->toJson() . '|' . $company->toJson();
+
+        //dd($json);
+        $crypted = base64_encode(gzdeflate($json));
+
+        return $crypted;
+    }
+
+    public function openAuthenticatedModal()
+    {
+        $user = User::where('user', $this->username)
+            ->where('password2', $this->password)
+            ->first();
+        if ($user) {
+            if ($user->profile === 'Administrador' || $user->profile === 'Super' || $user->profile === 'Encargado') {
+                $this->reset(['username', 'password']);
+                $this->act = 1;
+                $this->showModalAutenticate = false;
+                $this->showModalCorteZ = true;
+
+                //$this->dispatchBrawserEvent('modalUpdated');
+                $this->emit('modal-updated', 'Valido');
+            } else {
+                $this->emit('item-error', 'No tienes los permisos necesarios para realizar cortes.');
+            }
+        } else {
+            $this->emit('item-error', 'Autenticación fallida. Por favor, verifica tus credenciales.');
+        }
+    }
+
+    public function openAuthenticatedModal2()
+    {
+        $user = User::where('user', $this->username2)
+            ->where('password2', $this->password2)
+            ->first();
+        if ($user) {
+            if ($user->profile === 'Administrador' || $user->profile === 'Super' || $user->profile === 'Encargado') {
+                $this->reset(['username', 'password']);
+                $this->act = 1;
+                $this->showModalAutenticate2 = false;
+                $this->showModalCorteZ2 = true;
+
+                //$this->dispatchBrawserEvent('modalUpdated');
+                $this->emit('modal-cierre', 'Valido');
+            } else {
+                $this->emit('item-error', $this->username2 .' No tienes los permisos necesarios para realizar cortes.');
+            }
+        } else {
+            $this->emit('item-error', 'Autenticación fallida. Por favor, verifica tus credenciales.');
+        }
+    }
+
+    public function openAuthenticatedModal3()
+    {
+        $user = User::where('user', $this->usernamex)
+        ->where('password2', $this->passwordx)
+        ->first();
+        if ($user) {
+            if ($user->profile === 'Administrador' || $user->profile === 'Super' || $user->profile === 'Encargado') {
+                $this->reset(['username', 'password']);
+                $this->act = 1;
+                $this->showModalAutenticateX = false;
+                $this->showModalCorteX = true;
+                $this->CuadrarEfectivoX();
+
+                //$this->dispatchBrawserEvent('modalUpdated');
+                $this->emit('modal-cierrex', 'Valido');
+            } else {
+                $this->emit('item-error', $this->usernamex .' No tienes los permisos necesarios para realizar cortes.');
+            }
+        } else {
+            $this->emit('item-error', 'Autenticación fallida. Por favor, verifica tus credenciales.');
+        }
+    }
+
+    public function AnulaDevo()
+    {
+        $rules = [
+            'numeroDoc' => 'required',
+            'passwordd' => 'required',
+            'tipoTran' => 'required',
+            'fo'=> 'required'
+        ];
+
+        $messages = [
+            'numeroDoc.required' => 'Nombre de Ticket o Factura requerido',
+            'tipoTran.required' => 'Seleccione el tipo de transaccion',
+            'passwordd.required' => 'La contraseña de autorización es requerida',
+            'fo.required' => 'Seleccione el tipo de factura'
+        ];
+        $this->validate($rules, $messages);
+
+        $vali = Caja::where('correlativo', $this->numeroDoc)->where('caja', session('caja'))->where('facturador', $this->fo)->first();
+
+        $hoy = date('Y-m-d');
+
+        if ($vali) {
+            if ($vali->estado == 'Cancelado') {
+                $user = User::where('password2', $this->passwordd)->first();
+                $venta = Ventas::find($vali->venta);
+
+                if ($user) {
+                    if ($user->profile === 'Administrador' || $user->profile === 'Super' || $user->profile === 'Encargado') {
+                        if ($this->tipoTran == 1) {
+                            //if ($vali->fecha == $hoy) {
+                                $ultimoCorrelativo = Anulaciones::where('sucursal', session('sucursal'))->where('empresa', session('empresa'))->where('caja', session('caja'))->latest('correlativo')->first();
+                                if ($ultimoCorrelativo) {
+                                    $correlativo = $ultimoCorrelativo->correlativo + 1;
+                                } else {
+                                    $correlativo = 1;
+                                }
+                                $anu = Anulaciones::create([
+                                    'caja' => $venta->caja,
+                                    'sucursal' => $venta->sucursal,
+                                    'empresa' => $venta->empresa,
+                                    'corte' => $vali->corte,
+                                    'venta' => $venta->id,
+                                    'cajas' => $vali->id,
+                                    'facturador' => $vali->facturador,
+                                    'tipoPago' => $vali->tipoPago,
+                                    'correlativo' => $correlativo,
+                                    'codigo' => $vali->numero,
+                                    'numero' => $vali->correlativo,
+                                    'sello' => $vali->sello,
+                                    'fecha' => date('Y-m-d'),
+                                    'hora' => date('H:i:s'),
+                                    'cajero' => $vali->cajero,
+                                    'autorizado' => $user->id,
+                                    'comprobante' => $vali->comprobante,
+                                    'efectivo' => $vali->efectivo,
+                                    'cambio' => $vali->cambio,
+                                    'subtotal' => $vali->subtotal,
+                                    'descuento' => $vali->descuento,
+                                    'iva' => $vali->iva,
+                                    'total' => $vali->total,
+                                    'estado' => 'Anulado',
+                                ]);
+
+                                if ($anu) {
+                                    $ventas = VentasDetalles::where('venta', $vali->venta)->get();
+                                    foreach ($ventas as $detalle) {
+                                        AnulacionesDetalle::create([
+                                            'anulacion' => $anu->id,
+                                            'producto' => $detalle->producto,
+                                            'medida' => $detalle->medida,
+                                            'unidad' => $detalle->unidad,
+                                            'descargar' => $detalle->descargar,
+                                            'cantidad' => $detalle->cantidad,
+                                            'precio' => $detalle->precio,
+                                            'descuento' => $detalle->descuento,
+                                            'subtotal' => $detalle->subtotal,
+                                            'iva' => $detalle->iva,
+                                            'total' => $detalle->total,
+                                        ]);
+
+                                        ////ingresarlo al inventario
+                                        $in = Inventarios::where('producto', $detalle->producto)
+                                            ->where('sucursal', session('sucursal'))
+                                            ->where('empresa', session('empresa'))
+                                            ->first();
+                                        $newStock = $in->existencia + $detalle->cantidad;
+
+                                        $in->existencia = $newStock;
+                                        $in->save();
+
+                                        /////ingreso al kardex/////////////////
+                                        $p = Precios::where('producto', $detalle->producto)
+                                            ->where('presentacion', $detalle->unidad)
+                                            ->first();
+
+                                        $des = 'Anulacion del tikect o factura ' . $this->numeroDoc;
+                                        $kardex = Kardex::create([
+                                            'producto' => $detalle->producto,
+                                            'inventario' => $in->id,
+                                            'descripcion' => $des,
+                                            'fecha' => date('Y-m-d'),
+                                            'hora' => date('H:i:s'),
+                                            'ingresoCantidad' => $detalle->descargar,
+                                            'ingresoValor' => $p->costociva,
+                                            'egresoCantidad' => 0,
+                                            'egresoValor' => 0,
+                                            'saldoCantidad' => $newStock,
+                                            'saldoValor' => $newStock * $p->costociva,
+                                        ]);
+                                    }
+                                }
+
+                                $vali->update(['estado' => 'Anulado']);
+                                $vali->save();
+                                $venta->update(['estado' => 'Anulado']);
+                                $venta->save();
+                                $this->ResetUIDevoAnu();
+                                ///id de la anulacion
+                                $this->ImprimirAnulacion($anu->id);
+                            //} else {
+                                //$this->ResetUIDevoAnu();
+                                //$this->emit('item-error', 'Error, no se puede realizar operacion, revise la fecha de facturacion.');
+                            //}
+                        } else {
+                            $hoy = Carbon::now();
+
+                            $fechaInicio = $hoy->copy()->subDay()->startOfDay();
+                            $fechaFin = $hoy->endOfDay();
+
+                            $query = Caja::where('correlativo', $this->numeroDoc)
+                                ->whereBetween('fecha', [$fechaInicio, $fechaFin])
+                                ->first();
+
+                            if ($query) {
+                                $ultimoCorrelativo = Devoluciones::where('sucursal', session('sucursal'))->where('empresa', session('empresa'))->where('caja', session('caja'))->latest('correlativo')->first();
+
+                                if ($ultimoCorrelativo) {
+                                    $correlativo = $ultimoCorrelativo->correlativo + 1;
+                                } else {
+                                    $correlativo = 1;
+                                }
+
+                                $anu = Devoluciones::create([
+                                    'caja' => $venta->caja,
+                                    'sucursal' => $venta->sucursal,
+                                    'empresa' => $venta->empresa,
+                                    'corte' => $vali->corte,
+                                    'venta' => $venta->id,
+                                    'cajas' => $vali->id,
+                                    'facturador' => $vali->facturador,
+                                    'tipoPago' => $vali->tipoPago,
+                                    'correlativo' => $correlativo,
+                                    'codigo' => $vali->numero,
+                                    'numero' => $vali->correlativo,
+                                    'sello' => $vali->sello,
+                                    'fecha' => date('Y-m-d'),
+                                    'hora' => date('H:i:s'),
+                                    'cajero' => $vali->cajero,
+                                    'autorizado' => $user->id,
+                                    'comprobante' => $vali->comprobante,
+                                    'efectivo' => $vali->efectivo,
+                                    'cambio' => $vali->cambio,
+                                    'subtotal' => $vali->subtotal,
+                                    'descuento' => $vali->descuento,
+                                    'iva' => $vali->iva,
+                                    'total' => $vali->total,
+                                    'estado' => 'Devolucion',
+                                ]);
+
+                                if ($anu) {
+                                    $ventas = VentasDetalles::where('venta', $vali->venta)->get();
+                                    foreach ($ventas as $detalle) {
+                                        DevolucionesDetalles::create([
+                                            'devolucion' => $anu->id,
+                                            'producto' => $detalle->producto,
+                                            'medida' => $detalle->medida,
+                                            'unidad' => $detalle->unidad,
+                                            'descargar' => $detalle->descargar,
+                                            'cantidad' => $detalle->cantidad,
+                                            'precio' => $detalle->precio,
+                                            'descuento' => $detalle->descuento,
+                                            'subtotal' => $detalle->subtotal,
+                                            'iva' => $detalle->iva,
+                                            'total' => $detalle->total,
+                                        ]);
+
+                                        ////ingresarlo al inventario
+                                        $in = Inventarios::where('producto', $detalle->producto)
+                                            ->where('sucursal', session('sucursal'))
+                                            ->where('empresa', session('empresa'))
+                                            ->first();
+                                        $newStock = $in->existencia + $detalle->cantidad;
+
+                                        $in->existencia = $newStock;
+                                        $in->save();
+
+                                        /////ingreso al kardex/////////////////
+                                        $p = Precios::where('producto', $detalle->producto)
+                                            ->where('presentacion', $detalle->unidad)
+                                            ->first();
+
+                                        $des = 'Devolucion del tikect o factura ' . $this->numeroDoc;
+                                        $kardex = Kardex::create([
+                                            'producto' => $detalle->producto,
+                                            'inventario' => $in->id,
+                                            'descripcion' => $des,
+                                            'fecha' => date('Y-m-d'),
+                                            'hora' => date('H:i:s'),
+                                            'ingresoCantidad' => $detalle->descargar,
+                                            'ingresoValor' => $p->costociva,
+                                            'egresoCantidad' => 0,
+                                            'egresoValor' => 0,
+                                            'saldoCantidad' => $newStock,
+                                            'saldoValor' => $newStock * $p->costociva,
+                                        ]);
+                                    }
+                                }
+
+                                $vali->update(['estado' => 'Devolucion']);
+                                //$vali->save();
+                                $venta->update(['estado' => 'Devolucion']);
+                                //$venta->save();
+
+                                $this->ResetUIDevoAnu();
+                                ///id de la devolucvion
+                                $this->ImprimirDevolucion($anu->id);
+                            } else {
+                                $this->ResetUIDevoAnu();
+                                $this->emit('item-error', 'No se puede realizar esta operacion ya que la fecha es mayor a 24 horas');
+                            }
+                        }
+                    } else {
+                        $this->ResetUIDevoAnu();
+                        $this->emit('item-error', 'No tienes los permisos necesarios para realizar esta operación.');
+                    }
+                } else {
+                    $this->ResetUIDevoAnu();
+                    $this->emit('item-error', 'Autenticación fallida. Por favor, verifica tu contraseña.');
+                }
+            } else {
+                $this->ResetUIDevoAnu();
+                $this->emit('item-error', 'Error, Este ticket o Factura ya fue Cancelado o Anulado');
+            }
+        } else {
+            $this->ResetUIDevoAnu();
+            $this->emit('item-error', 'Error, no se encontro ticket o Factura');
+        }
+    }
+
+    public function CuadrarEfectivo()
+    {
+        // Asegurarte de que todas las variables son números
+        /*
+        $this->b100 = (float)($this->b100 ?? 0);
+        $this->b50 = (float)($this->b50 ?? 0);
+        $this->b20 = (float)($this->b20 ?? 0);
+        $this->b10 = (float)($this->b10 ?? 0);
+        $this->b5 = (float)($this->b5 ?? 0);
+        $this->b1 = (float)($this->b1 ?? 0);
+        $this->bd1 = (float)($this->bd1 ?? 0);
+        $this->b025 = (float)($this->b025 ?? 0);
+        $this->b010 = (float)($this->b010 ?? 0);
+        $this->b005 = (float)($this->b005 ?? 0);
+        $this->b001 = (float)($this->b001 ?? 0);
+
+        // Realizar las multiplicaciones
+        $this->b100R = $this->b100 * 100;
+        $this->b50R = $this->b50 * 50;
+        $this->b20R = $this->b20 * 20;
+        $this->b10R = $this->b10 * 10;
+        $this->b5R = $this->b5 * 5;
+        $this->b1R = $this->b1 * 1;
+        $this->bd1R = $this->bd1 * 1;
+        $this->b025R = $this->b025 * 0.25;
+        $this->b010R = $this->b010 * 0.1;
+        $this->b005R = $this->b005 * 0.05;
+        $this->b001R = $this->b001 * 0.01;
+        */
+        // Calcular los totales de ventas, tarjetas, cheques, créditos, remesas, anulaciones y devoluciones
+        $this->totalVentas = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 1)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('total');
+
+        $this->totalTarjetas = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+        $this->totalCheque = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 3)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+        $this->totalCreditos = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 4)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Credito')->sum('total');
+
+        $this->totalRemesas = Remesas::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('monto');
+
+        $this->totalAnulaciones = Caja::where('fecha', date('Y-m-d'))->where('estado', 'Anulado')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+        $this->totalDevoluciones = Caja::where('fecha', date('Y-m-d'))->where('estado', 'Devolucion')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+        $this->cortes = Arqueos::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('totalGeneral');
+
+        // Calcular las sumas y diferencias
+        $this->totalSumas = $this->totalVentas + $this->totalTarjetas + $this->totalCheque;
+        $this->totalSumaResta = $this->totalSumas - $this->cortes - $this->totalRemesas;
+
+        //$this->totalEfectivo = $this->b100R + $this->b50R + $this->b20R + $this->b10R + $this->b5R + $this->b1R + $this->bd1R + $this->b025R + $this->b010R + $this->b005R + $this->b001R;
+
+        $this->totalDiferencia = $this->totalEfectivo - ($this->totalSumaResta + $this->aperturas->inicio);
+    }
+
+    public function CuadrarEfectivo2()
+    {
+        // Asegurarte de que todas las variables son números
+        /*$this->b100 = (float)($this->b100 ?? 0);
+        $this->b50 = (float)($this->b50 ?? 0);
+        $this->b20 = (float)($this->b20 ?? 0);
+        $this->b10 = (float)($this->b10 ?? 0);
+        $this->b5 = (float)($this->b5 ?? 0);
+        $this->b1 = (float)($this->b1 ?? 0);
+        $this->bd1 = (float)($this->bd1 ?? 0);
+        $this->b025 = (float)($this->b025 ?? 0);
+        $this->b010 = (float)($this->b010 ?? 0);
+        $this->b005 = (float)($this->b005 ?? 0);
+        $this->b001 = (float)($this->b001 ?? 0);
+        */
+        // Realizar las multiplicaciones
+        /*$this->b100R = $this->b100 * 100;
+        $this->b50R = $this->b50 * 50;
+        $this->b20R = $this->b20 * 20;
+        $this->b10R = $this->b10 * 10;
+        $this->b5R = $this->b5 * 5;
+        $this->b1R = $this->b1 * 1;
+        $this->bd1R = $this->bd1 * 1;
+        $this->b025R = $this->b025 * 0.25;
+        $this->b010R = $this->b010 * 0.1;
+        $this->b005R = $this->b005 * 0.05;
+        $this->b001R = $this->b001 * 0.01;
+        */
+
+        // Calcular los totales de ventas, tarjetas, cheques, créditos, remesas, anulaciones y devoluciones
+        $this->totalVentas2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 1)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('total');
+
+        $this->totalTarjetas2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+        $this->totalCheque2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 3)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->sum('total');
+
+        $this->totalCreditos2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('tipoPago', 4)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Credito')->sum('total');
+
+        $this->totalRemesas2 = Remesas::where('fecha', $this->aperturas2->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('monto');
+
+        $this->totalAnulaciones2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('estado', 'Anulado')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+        $this->totalDevoluciones2 = Caja::where('fecha', $this->aperturas2->fechaApertura)->where('estado', 'Devolucion')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->sum('total');
+
+        // Calcular las sumas y diferencias
+        $this->totalSumas2 = $this->totalVentas2 + $this->totalTarjetas2 + $this->totalCheque2;
+        $this->totalSumaResta2 = $this->totalSumas2 - $this->totalRemesas2 - $this->cortes2;
+
+        //$this->totalEfectivo2 = $this->b100R + $this->b50R + $this->b20R + $this->b10R + $this->b5R + $this->b1R + $this->bd1R + $this->b025R + $this->b010R + $this->b005R + $this->b001R;
+
+        $this->totalDiferencia2 = $this->totalEfectivo2 - ($this->totalSumaResta2 + $this->aperturas2->inicio);
+    }
+
+    public function CuadrarEfectivoX()
+    {
+        $user = Auth::user();
+
+        // Asegurarte de que todas las variables son números
+        /*
+        $this->b100 = (float)($this->b100 ?? 0);
+        $this->b50 = (float)($this->b50 ?? 0);
+        $this->b20 = (float)($this->b20 ?? 0);
+        $this->b10 = (float)($this->b10 ?? 0);
+        $this->b5 = (float)($this->b5 ?? 0);
+        $this->b1 = (float)($this->b1 ?? 0);
+        $this->bd1 = (float)($this->bd1 ?? 0);
+        $this->b025 = (float)($this->b025 ?? 0);
+        $this->b010 = (float)($this->b010 ?? 0);
+        $this->b005 = (float)($this->b005 ?? 0);
+        $this->b001 = (float)($this->b001 ?? 0);
+
+        // Realizar las multiplicaciones
+        $this->b100R = $this->b100 * 100;
+        $this->b50R = $this->b50 * 50;
+        $this->b20R = $this->b20 * 20;
+        $this->b10R = $this->b10 * 10;
+        $this->b5R = $this->b5 * 5;
+        $this->b1R = $this->b1 * 1;
+        $this->bd1R = $this->bd1 * 1;
+        $this->b025R = $this->b025 * 0.25;
+        $this->b010R = $this->b010 * 0.1;
+        $this->b005R = $this->b005 * 0.05;
+        $this->b001R = $this->b001 * 0.01; */
+
+        // Calcular los totales de ventas, tarjetas, cheques, créditos, remesas, anulaciones y devoluciones
+        $this->totalVentasx = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 1)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->where('cajero', $user->id)->where('arqueado', 0)->sum('total');
+
+        $this->totalTarjetasx = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', 0)->sum('total');
+
+        $this->totalChequex = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 3)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', 0)->sum('total');
+
+        $this->totalCreditosx = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 4)->where('sucursal', session('sucursal'))->where('estado', 'Credito')->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', 0)->sum('total');
+
+        $this->totalRemesasx = Remesas::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', 0)->sum('monto');
+
+        $this->totalAnulacionesx = Caja::where('fecha', date('Y-m-d'))->where('estado', 'Anulado')->where('sucursal', session('sucursal'))->where('cajero', $user->id)->where('caja', session('caja'))->where('arqueado', 0)->sum('total');
+
+        $this->totalDevolucionesx = Caja::where('fecha', date('Y-m-d'))->where('estado', 'Devolucion')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', 0)->sum('total');
+
+        // Calcular las sumas y diferencias
+        $this->totalSumasx = $this->totalVentasx + $this->totalTarjetasx + $this->totalChequex;
+        $this->totalSumaRestax = $this->totalSumasx - $this->totalRemesasx;
+
+        /*$this->totalEfectivox = $this->b100R + $this->b50R + $this->b20R + $this->b10R + $this->b5R + $this->b1R + $this->bd1R + $this->b025R + $this->b010R + $this->b005R + $this->b001R; */
+
+        $this->totalDiferenciax = $this->totalEfectivox - ($this->totalSumaRestax + $this->aperturas->inicio);
+    }
+
+    public function ResetUIDevoAnu()
+    {
+        $this->numeroDoc = '';
+        $this->tipoTran = 'Elegir';
+        $this->passwordd = '';
+    }
+
+    public function CorteZ()
+    {
+        $user_id = Auth::user()->id;
+        $apertura = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Aperturado')->first();
+
+        $totalEfectivo =
+            Caja::where('fecha', $apertura->fechaApertura)
+                ->where('tipoPago', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('estado', 'Cancelado')
+                ->sum('total') ?? 0;
+
+        $totalTarjetas =
+            Caja::where('fecha', $apertura->fechaApertura)
+                ->where('tipoPago', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('estado', 'Cancelado')
+                ->sum('total') ?? 0;
+
+        $totalCheque =
+            Caja::where('fecha', $apertura->fechaApertura)
+                ->where('tipoPago', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('estado', 'Cancelado')
+                ->sum('total') ?? 0;
+
+        $totalCreditos =
+            Caja::where('fecha', $apertura->fechaApertura)
+                ->where('tipoPago', 4)
+                ->where('estado', 'Cancelado')
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->sum('total') ?? 0;
+
+        $primerTicket =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $ultimoTicket =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $consumidorDesde =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $consumidorHasta =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $CreDesde =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $CreHasta =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $dteDesde =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('numero') ?? 0;
+
+        $dteHasta =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('numero') ?? 0;
+
+        $creditosDesde =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $creditosHasta =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('total') ?? 0;
+
+        $devoluciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Devolucion')
+                ->sum('total') ?? 0;
+
+        $anulaciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Anulado')
+                ->sum('total') ?? 0;
+
+        $remesas = Remesas::where('fecha', $apertura->fechaApertura)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('estado', 'Remesado')
+                ->sum('monto') ?? 0;
+
+        $cortes = Arqueos::where('fecha', $apertura->fechaApertura)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('empresa', session('empresa'))
+                ->sum('totalGeneral') ?? 0;
+
+        $corte = Cortes::find($this->corteActivo->id);
+        $aper = Aperturas::find($this->aperturas->id);
+
+        $aper->update([
+            'FcierreApertura' => date('Y-m-d'),
+            'HcierreApertura' => date('H:i:s'),
+            'estado' => 'Cerrado',
+        ]);
+        $aper->save();
+
+        $corte->update([
+            'estado' => 'Cerrado',
+            'efectivo' => $totalEfectivo,
+            'tarjeta' => $totalTarjetas,
+            'cheque' => $totalCheque,
+            'credito' => $totalCreditos,
+            'subtotalPagos' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'devoluciones' => $devoluciones,
+            'anulaciones' => $anulaciones,
+            'remesas' => $remesas,
+            'percepcion' => 0,
+            'cortes' => $cortes,
+            'sumaTotales' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'ticketDesde' => $primerTicket,
+            'ticketHasta' => $ultimoTicket,
+            'gravadosT' => $gravadosT / 1.13,
+            'ivaT' => $ivaT,
+            'subT' => $totalT,
+            'totalT' => $totalT,
+            'consumidorDesde' => $consumidorDesde,
+            'consumidorHasta' => $consumidorHasta,
+            'gravadosCon' => $gravadosCon / 1.13,
+            'ivaCon' => $ivaCon,
+            'subCon' => $totalCon,
+            'totalCon' => $totalCon,
+            'CreDesde' => $CreDesde,
+            'CreHasta' => $CreHasta,
+            'gravadosCre' => $gravadosCre / 1.13,
+            'ivaCre' => $ivaCre,
+            'subCre' => $totalCre,
+            'totalCre' => $totalCre,
+            'dteDesde' => $dteDesde,
+            'dteHasta' => $dteHasta,
+            'gravadosDTE' => $gravadosCon + $gravadosCre,
+            'ivaDTE' => $ivaCon + $ivaCre,
+            'subDTE' => $totalCon + $totalCre,
+            'totalDTE' => $totalCon + $totalCre,
+            'creditosDesde' => $creditosDesde,
+            'creditosHasta' => $creditosHasta,
+            'gravadosCredi' => $gravadosCredi,
+            'ivaCredi' => $ivaCredi,
+            'subCredi' => $totalCredi,
+            'totalCredi' => $totalCredi,
+            'totalGeneral' => $gravadosCon + $gravadosCre + $gravadosT,
+            'ivaGeneral' => $ivaCon + $ivaCre + $ivaT,
+            'subGeneral' => $totalCon + $totalCre + $totalT,
+            'totalGlobal' => $totalCon + $totalCre + $totalT,
+            'totalEfectivo' => $this->totalEfectivo - $apertura->inicio,
+            'diferencia' => $this->totalDiferencia
+        ]);
+        $corte->save();
+
+        $acti = Actividades::where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('user', $user_id )->latest('created_at')->first();
+        $acti->status = 'Cerrado';
+        $acti->save();
+
+        Caja::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->update(['arqueado' => true]);
+
+        Remesas::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->update(['arqueado' => true]);
+
+        $this->ImprimirCorteZ($this->corteActivo->id);
+    }
+
+    public function CorteZ2($id)
+    {
+        $user_id = Auth::user()->id;
+        $apertura = Aperturas::find($id);
+
+        $totalEfectivo = Caja::where('fecha', $apertura->fechaApertura)->where('tipoPago', 1)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->sum('total') ?? 0;
+
+        $totalTarjetas = Caja::where('fecha', $apertura->fechaApertura)->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado') ->where('caja', session('caja'))->sum('total') ?? 0;
+
+        $totalCheque = Caja::where('fecha', $apertura->fechaApertura)->where('tipoPago', 3)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado') ->where('caja', session('caja'))->sum('total') ?? 0;
+
+        $totalCreditos = Caja::where('fecha', $apertura->fechaApertura)->where('tipoPago', 4)->where('estado', 'Cancelado')->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->sum('total') ?? 0;
+
+        $primerTicket = Caja::where('facturador', 1)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->orderBy('id', 'asc')->value('correlativo') ?? 0;
+
+        $ultimoTicket = Caja::where('facturador', 1)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->orderBy('id', 'desc')->value('correlativo') ?? 0;
+
+        $gravadosT = Caja::where('facturador', 1)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('subtotal') ?? 0;
+
+        $ivaT =Caja::where('facturador', 1)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('iva') ?? 0;
+
+        $totalT = Caja::where('facturador', 1)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('total') ?? 0;
+
+        $consumidorDesde = Caja::where('facturador', 2)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->orderBy('id', 'asc')->value('correlativo') ?? 0;
+
+        $consumidorHasta = Caja::where('facturador', 2)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->orderBy('id', 'desc')->value('correlativo') ?? 0;
+
+        $gravadosCon = Caja::where('facturador', 2)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('subtotal') ?? 0;
+
+        $ivaCon = Caja::where('facturador', 2)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('iva') ?? 0;
+
+        $totalCon = Caja::where('facturador', 2)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('total') ?? 0;
+
+        $CreDesde =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $CreHasta = Caja::where('facturador', 3)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->orderBy('id', 'desc')->value('correlativo') ?? 0;
+
+        $gravadosCre = Caja::where('facturador', 3)->where('sucursal', session('sucursal')) ->where('caja', session('caja'))->whereDate('fecha', $apertura->fechaApertura)->where('estado', 'Cancelado')->where('tipoPago', '<>', 4)->sum('subtotal') ?? 0;
+
+        $ivaCre = Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $dteDesde =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('numero') ?? 0;
+
+        $dteHasta =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('numero') ?? 0;
+
+        $creditosDesde =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $creditosHasta =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('total') ?? 0;
+
+        $devoluciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Devolucion')
+                ->sum('total') ?? 0;
+
+        $anulaciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->whereDate('fecha', $apertura->fechaApertura)
+                ->where('estado', 'Anulado')
+                ->sum('total') ?? 0;
+        $percecion =
+            Caja::where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->whereDate('fecha', $apertura->fechaApertura)
+            ->sum('percepcion') ?? 0;
+
+        $remesas = Remesas::where('fecha', $apertura->fechaApertura)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('estado', 'Remesado')
+            ->sum('monto') ?? 0;
+
+        $cortes = Arqueos::where('fecha', $apertura->fechaApertura)
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('empresa', session('empresa'))
+            ->sum('totalGeneral') ?? 0;
+
+        $corte = Cortes::where('fecha', $apertura->fechaApertura)->first();
+        $aper = Aperturas::find($id);
+        //dd($id);
+
+        $aper->FcierreApertura = date('Y-m-d');
+        $aper->HcierreApertura = date('H:i:s');
+        $aper->estado = 'Cerrado';
+        $aper->save();
+
+        $corte->update([
+            'estado' => 'Cerrado',
+            'efectivo' => $totalEfectivo,
+            'tarjeta' => $totalTarjetas,
+            'cheque' => $totalCheque,
+            'credito' => $totalCreditos,
+            'subtotalPagos' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'devoluciones' => $devoluciones,
+            'anulaciones' => $anulaciones,
+            'remesas' => $remesas,
+            'percepcion' => $percecion,
+            'cortes' => $cortes,
+            'sumaTotales' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'ticketDesde' => $primerTicket,
+            'ticketHasta' => $ultimoTicket,
+            'gravadosT' => $gravadosT / 1.13,
+            'ivaT' => $ivaT,
+            'subT' => $totalT,
+            'totalT' => $totalT,
+            'consumidorDesde' => $consumidorDesde,
+            'consumidorHasta' => $consumidorHasta,
+            'gravadosCon' => $gravadosCon / 1.13,
+            'ivaCon' => $ivaCon,
+            'subCon' => $totalCon,
+            'totalCon' => $totalCon,
+            'CreDesde' => $CreDesde,
+            'CreHasta' => $CreHasta,
+            'gravadosCre' => $gravadosCre / 1.13,
+            'ivaCre' => $ivaCre,
+            'subCre' => $totalCre,
+            'totalCre' => $totalCre,
+            'dteDesde' => $dteDesde,
+            'dteHasta' => $dteHasta,
+            'gravadosDTE' => $gravadosCon + $gravadosCre,
+            'ivaDTE' => $ivaCon + $ivaCre,
+            'subDTE' => $totalCon + $totalCre,
+            'totalDTE' => $totalCon + $totalCre,
+            'creditosDesde' => $creditosDesde,
+            'creditosHasta' => $creditosHasta,
+            'gravadosCredi' => $gravadosCredi,
+            'ivaCredi' => $ivaCredi,
+            'subCredi' => $totalCredi,
+            'totalCredi' => $totalCredi,
+            'totalGeneral' => $gravadosCon + $gravadosCre + $gravadosT,
+            'ivaGeneral' => $ivaCon + $ivaCre + $ivaT,
+            'subGeneral' => $totalCon + $totalCre + $totalT,
+            'totalGlobal' => $totalCon + $totalCre + $totalT,
+            'totalEfectivo'=> $this->totalEfectivo2 - $apertura->inicio,
+            'diferencia' => $this->totalDiferencia2
+        ]);
+        //$cor = Cortes::where('fecha', $apertura->fechaApertura)->first();
+        $corte->save();
+        //d$aper->fechaApertura);
+        $acti = Actividades::whereDate('created_at', $aper->fechaApertura)
+        ->where('sucursal', session('sucursal'))
+        ->where('caja', session('caja'))
+        //->where('status', 'Activo')
+        ->first();
+        $acti->status = 'Cerrado';
+        $acti->save();
+
+        Caja::where('fecha', $aper->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->update(['arqueado' => true]);
+
+        Remesas::where('fecha', $aper->fechaApertura)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->update(['arqueado' => true]);
+
+        $this->ImprimirCorteZ($corte->id);
+    }
+
+    public function CorteX()
+    {
+        $user = Auth::user();
+
+        $apertura = Aperturas::where('empresa', session('empresa'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Aperturado')->first();
+
+        $totalEfectivo = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 1)->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('estado', 'Cancelado')->where('cajero', $user->id)->where('arqueado', false)->sum('total') ?? 0;
+
+        $totalTarjetas = Caja::where('fecha', date('Y-m-d'))->where('tipoPago', 2)->where('sucursal', session('sucursal'))->where('estado', 'Cancelado')->where('caja', session('caja'))->where('cajero', $user->id)->where('arqueado', false)->sum('total') ?? 0;
+
+        $totalCheque =
+            Caja::where('fecha', date('Y-m-d'))
+                ->where('tipoPago', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('estado', 'Cancelado')
+                ->where('arqueado', false)
+                ->sum('total') ?? 0;
+
+        $totalCreditos =
+            Caja::where('fecha', date('Y-m-d'))
+                ->where('tipoPago', 4)
+                ->where('estado', 'Cancelado')
+                ->where('sucursal', session('sucursal'))
+                ->where('cajero', $user->id)
+                ->where('caja', session('caja'))
+                ->where('arqueado', false)
+                ->sum('total') ?? 0;
+
+        $primerTicket =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $ultimoTicket =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalT =
+            Caja::where('facturador', 1)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $consumidorDesde =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $consumidorHasta =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCon =
+            Caja::where('facturador', 2)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $CreDesde =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $CreHasta =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCre =
+            Caja::where('facturador', 3)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', '<>', 4)
+                ->sum('total') ?? 0;
+
+        $dteDesde =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('numero') ?? 0;
+
+        $dteHasta =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('numero') ?? 0;
+
+        $creditosDesde =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'asc')
+                ->value('correlativo') ?? 0;
+
+        $creditosHasta =
+            Caja::where('tipoPago', 4)
+                ->where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->orderBy('id', 'desc')
+                ->value('correlativo') ?? 0;
+
+        $gravadosCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('subtotal') ?? 0;
+
+        $ivaCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('iva') ?? 0;
+
+        $totalCredi =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Cancelado')
+                ->where('tipoPago', 4)
+                ->sum('total') ?? 0;
+
+        $devoluciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('cajero', $user->id)
+                ->where('arqueado', false)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Devolucion')
+                ->sum('total') ?? 0;
+
+        $anulaciones =
+            Caja::where('sucursal', session('sucursal'))
+                ->where('caja', session('caja'))
+                ->where('arqueado', false)
+                ->where('cajero', $user->id)
+                ->whereDate('fecha', date('Y-m-d'))
+                ->where('estado', 'Anulado')
+                ->sum('total') ?? 0;
+
+        $percecion =
+            Caja::where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('cajero', $user->id)
+            ->where('arqueado', false)
+            ->whereDate('fecha', date('Y-m-d'))
+            ->where('estado', 'Anulado')
+            ->sum('percepcion') ?? 0;
+
+        $remesas = Remesas::where('fecha', date('Y-m-d'))
+            ->where('sucursal', session('sucursal'))
+            ->where('caja', session('caja'))
+            ->where('cajero', $user->id)
+            ->where('estado', 'Remesado')
+            ->where('arqueado', false)
+            ->sum('monto') ?? 0;
+
+        $ultimoCodigo = Arqueos::where('caja', session('caja'))
+            ->where('sucursal', session('sucursal'))
+            ->latest('numero')
+            ->first();
+
+            if ($ultimoCodigo) {
+                $numeroSiguiente = $ultimoCodigo->numero + 1;
+            }
+            else
+            {
+                $numeroSiguiente = 1;
+            }
+
+        $arqueo = Arqueos::create([
+            'numero' => $numeroSiguiente,
+            'fecha' => date('Y-m-d'),
+            'hora' => date('H:i:s'),
+            'caja' => session('caja'),
+            'sucursal' => session('sucursal'),
+            'empresa' => session('empresa'),
+            'cajero' => $user->id,
+            'tipo' => 'X',
+            'efectivo' => $totalEfectivo,
+            'tarjeta' => $totalTarjetas,
+            'cheque' => $totalCheque,
+            'credito' => $totalCreditos,
+            'subtotalPagos' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'devoluciones' => $devoluciones,
+            'anulaciones' => $anulaciones,
+            'remesas' => $remesas,
+            'percepcion' => $percecion,
+            'sumaTotales' => $totalEfectivo + $totalTarjetas + $totalCheque,
+            'ticketDesde' => $primerTicket,
+            'ticketHasta' => $ultimoTicket,
+            'gravadosT' => $gravadosT / 1.13,
+            'ivaT' => $ivaT,
+            'subT' => $totalT,
+            'totalT' => $totalT,
+            'consumidorDesde' => $consumidorDesde,
+            'consumidorHasta' => $consumidorHasta,
+            'gravadosCon' => $gravadosCon / 1.13,
+            'ivaCon' => $ivaCon,
+            'subCon' => $totalCon,
+            'totalCon' => $totalCon,
+            'CreDesde' => $CreDesde,
+            'CreHasta' => $CreHasta,
+            'gravadosCre' => $gravadosCre / 1.13,
+            'ivaCre' => $ivaCre,
+            'subCre' => $totalCre,
+            'totalCre' => $totalCre,
+            'dteDesde' => $dteDesde,
+            'dteHasta' => $dteHasta,
+            'gravadosDTE' => $gravadosCon + $gravadosCre,
+            'ivaDTE' => $ivaCon + $ivaCre,
+            'subDTE' => $totalCon + $totalCre,
+            'totalDTE' => $totalCon + $totalCre,
+            'creditosDesde' => $creditosDesde,
+            'creditosHasta' => $creditosHasta,
+            'gravadosCredi' => $gravadosCredi,
+            'ivaCredi' => $ivaCredi,
+            'subCredi' => $totalCredi,
+            'totalCredi' => $totalCredi,
+            'totalGeneral' => $gravadosCon + $gravadosCre + $gravadosT - $remesas,
+            'ivaGeneral' => $ivaCon + $ivaCre + $ivaT,
+            'subGeneral' => $totalCon + $totalCre + $totalT- $remesas,
+            'totalPercepcion' => $percecion,
+            'totalGlobal' => $totalCon + $totalCre + $totalT,
+            'totalEfectivo' => $this->totalEfectivox - $apertura->inicio,
+            'diferencia' => $this->totalDiferenciax
+        ]);
+
+        Caja::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('cajero', $user->id)->where('estado', 'Cancelado')->update(['arqueado' => true]);
+
+        Remesas::where('fecha', date('Y-m-d'))->where('sucursal', session('sucursal'))->where('caja', session('caja'))->where('cajero', $user->id)->update(['arqueado' => true]);
+
+        //dd($user->id);
+        $act = Actividades::where('user', $user->id)->where('status', 'Activo')->where('sucursal', session('sucursal'))->where('caja', session('caja'))->first();
+        $act->status= 'Cerrado';
+        $act->save();
+
+        $this->ImprimirCorteX($arqueo->id);
+        Auth::logout();
+        return Redirect::to('login');
+        //$this->ImprimirCorteX($arqueo->id);
+    }
+
+    public function AnulacionGetJsonBase64($id)
+    {
+        $empresa = session('empresa');
+        $sucursal = session('sucursal');
+
+        $tipo = 'Anulacion';
+
+        $details = AnulacionesDetalle::join('productos as p', 'p.id', 'anulaciones_detalles.producto')->join('medidas as m', 'm.id', 'p.medida')->select('p.nombreProducto as product', 'm.unidad as medida', 'anulaciones_detalles.cantidad', 'anulaciones_detalles.total')->where('anulaciones_detalles.anulacion', $id)->get();
+
+        $anulacion = Anulaciones::join('parametros as p', 'p.id', 'anulaciones.caja')->join('cajas as ca', 'ca.id', 'anulaciones.cajas')->join('cortes as c', 'c.id', 'ca.corte')->join('users as s', 's.id', 'ca.cajero')->select('anulaciones.fecha', 'anulaciones.hora', 'anulaciones.venta', 'anulaciones.numero as correlativo', 'p.caja', 'c.corte', DB::raw('ROUND(anulaciones.subtotal, 2) as subtotal'), DB::raw('ROUND(anulaciones.descuento, 2) as descuento'), DB::raw('ROUND(anulaciones.total, 2) as total'), 's.name as cajero', DB::raw('ROUND(anulaciones.efectivo, 2) as efectivo'), DB::raw('ROUND(anulaciones.cambio, 2) as cambio'))->find($id);
+
+        $company = Sucursales::join('empresas as e', 'e.id', 'sucursales.empresa')->select('e.empresa', 'e.registro', 'e.giro', 'e.nit', 'sucursales.direccion', 'e.razon')->find($sucursal);
+
+        $data = [
+            'tipo' => $tipo,
+        ];
+        //convertir a json
+        $json = "{\"tipo\":\"$tipo\"}|" . $details->toJson() . '|' . $anulacion->toJson() . '|' . $company->toJson();
+        $crypted = base64_encode(gzdeflate($json));
+
+        return $crypted;
+    }
+
+    public function ImprimirDevolucion($id)
+    {
+        $this->emit('print-ticket', $this->DevolucionGetJsonBase64($id));
+    }
+
+    public function DevolucionGetJsonBase64($id)
+    {
+        $empresa = session('empresa');
+        $sucursal = session('sucursal');
+
+        $tipo = 'Devolucion';
+
+        $details = DevolucionesDetalles::join('productos as p', 'p.id', 'devoluciones_detalles.producto')->join('medidas as m', 'm.id', 'p.medida')->select('p.nombreProducto as product', 'm.unidad as medida', 'devoluciones_detalles.cantidad', 'devoluciones_detalles.precio as costo', 'devoluciones_detalles.total')->where('devoluciones_detalles.devolucion', $id)->get();
+
+        $devolucion = Devoluciones::join('parametros as p', 'p.id', 'devoluciones.caja')->join('cajas as ca', 'ca.id', 'devoluciones.cajas')->join('cortes as c', 'c.id', 'ca.corte')->join('users as s', 's.id', 'ca.cajero')->select('devoluciones.fecha', 'devoluciones.hora', 'devoluciones.venta', 'devoluciones.numero as correlativo', 'p.caja', 'c.corte', DB::raw('ROUND(devoluciones.subtotal, 2) as subtotal'), DB::raw('ROUND(devoluciones.descuento, 2) as descuento'), DB::raw('ROUND(devoluciones.total, 2) as total'), 's.name as cajero', DB::raw('ROUND(devoluciones.efectivo, 2) as efectivo'), DB::raw('ROUND(devoluciones.cambio, 2) as cambio'))->find($id);
+
+        $company = Sucursales::join('empresas as e', 'e.id', 'sucursales.empresa')->select('e.empresa', 'e.registro', 'e.giro', 'e.nit', 'sucursales.direccion', 'e.razon')->find($sucursal);
+
+        $data = [
+            'tipo' => $tipo,
+        ];
+        //convertir a json
+        $json = "{\"tipo\":\"$tipo\"}|" . $details->toJson() . '|' . $devolucion->toJson() . '|' . $company->toJson();
+        $crypted = base64_encode(gzdeflate($json));
+
+        return $crypted;
+    }
+
+    public function ImprimirCorteZ($id)
+    {
+        $this->emit('print-ticket', $this->CorteZGetJsonBase64($id));
+    }
+
+    public function ImprimirCorteX($id)
+    {
+
+        $this->emit('print-ticket', $this->GenerarJsonCorteX($id));
+    }
+
+    public function CorteZGetJsonBase64($id)
+    {
+        $empresa = session('empresa');
+        $sucursal = session('sucursal');
+
+        $c = Cortes::find($id);
+
+        $tipo = 'CorteZ';
+
+        $details = Cortes::where('id', $id)
+            ->select(
+                'corte as product',
+                DB::raw('ROUND(efectivo, 2) as cantidad'),
+                DB::raw('ROUND(tarjeta, 2) as costo'),
+                DB::raw('ROUND(cheque, 2) as total'),
+                DB::raw('ROUND(credito, 2) as medida'),
+                DB::raw('ROUND(subtotalPagos, 2) as subtotalPagos'),
+                DB::raw('ROUND(devoluciones, 2) as devoluciones'),
+                DB::raw('ROUND(anulaciones, 2) as anulaciones'),
+                DB::raw('ROUND(remesas, 2) as remesas'),
+                DB::raw('ROUND(percepcion, 2) as percepcion'),
+                DB::raw('ROUND(cortes, 2) as cortes'),
+                DB::raw('ROUND(sumaTotales, 2) as sumaTotales'),
+                DB::raw('ROUND(ticketDesde, 2) as ticketDesde'),
+                DB::raw('ROUND(ticketHasta, 2) as ticketHasta'),
+                DB::raw('ROUND(gravadosT, 2) as gravadosT'),
+                DB::raw('ROUND(ivaT, 2) as ivaT'),
+                DB::raw('ROUND(subT, 2) as subT'),
+                DB::raw('ROUND(totalT, 2) as totalT'),
+                'consumidorDesde',
+                'consumidorHasta',
+                DB::raw('ROUND(gravadosCon, 2) as gravadosCon'),
+                DB::raw('ROUND(ivaCon, 2) as ivaCon'),
+                DB::raw('ROUND(subCon, 2) as subCon'),
+                DB::raw('ROUND(totalCon, 2) as totalCon'),
+                'CreDesde',
+                'CreHasta',
+                DB::raw('ROUND(gravadosCre, 2) as gravadosCre'),
+                DB::raw('ROUND(ivaCre, 2) as ivaCre'),
+                DB::raw('ROUND(subCre, 2) as subCre'),
+                DB::raw('ROUND(totalCre, 2) as totalCre'),
+                'dteDesde',
+                'dteHasta',
+                DB::raw('ROUND(gravadosDTE, 2) as gravadosDTE'),
+                DB::raw('ROUND(ivaDTE, 2) as ivaDTE'),
+                DB::raw('ROUND(subDTE, 2) as subDTE'),
+                DB::raw('ROUND(totalDTE, 2) as totalDTE'),
+                'creditosDesde',
+                'creditosHasta',
+                DB::raw('ROUND(gravadosCredi, 2) as gravadosCredi'),
+                DB::raw('ROUND(ivaCredi, 2) as ivaCredi'),
+                DB::raw('ROUND(subCredi, 2) as subCredi'),
+                DB::raw('ROUND(totalCredi, 2) as totalCredi'),
+                DB::raw('ROUND(totalGeneral, 2) as totalGeneral'),
+                DB::raw('ROUND(ivaGeneral, 2) as ivaGeneral'),
+                DB::raw('ROUND(subGeneral, 2) as subGeneral'),
+                DB::raw('ROUND(totalPercepcion, 2) as totalPercepcion'),
+                DB::raw('ROUND(totalGlobal, 2) as totalGlobal'),
+                DB::raw('ROUND(totalEfectivo, 2) as totalEfectivo'),
+                DB::raw('ROUND(diferencia, 2) as diferencia'),
+            )
+            ->get();
+
+        $apertura = Aperturas::join('empresas as e', 'e.id', 'aperturas.empresa')->join('sucursales as s', 'e.id', 'aperturas.empresa')->join('parametros as p', 'p.id', 'aperturas.caja')->select('aperturas.FechaApertura as fecha', 'aperturas.HcierreApertura as hora', 'p.caja')->where('aperturas.empresa', $c->empresa)->where('aperturas.sucursal', $c->sucursal)->where('aperturas.caja', $c->caja)->where('aperturas.FechaApertura', $c->fecha)->first();
+
+        $company = Sucursales::join('empresas as e', 'e.id', 'sucursales.empresa')->select('e.empresa', 'e.registro', 'e.giro', 'e.nit', 'sucursales.direccion', 'e.razon')->find($sucursal);
+
+        $json = "{\"tipo\":\"$tipo\"}|" . $details->toJson() . '|' . $apertura->toJson() . '|' . $company->toJson();
+        $crypted = base64_encode(gzdeflate($json));
+        //dd($crypted);
+        return $crypted;
+    }
+
+    public function ImprimirAnulacion($id)
+    {
+        $this->emit('print-ticket', $this->AnulacionGetJsonBase64($id));
+    }
+
+    public function SearchClientDui()
+    {
+        $bus = Clientes::where(function ($query) {
+            $query->where('dui', $this->duiC)
+                  ->orWhere('nit', $this->duiC);
+        })->whereNotIn('id', [1])->first();
+
+        if($bus)
+        {
+            $this->duiC = ($bus->idenReceptor == 2) ? $bus->dui : $bus->nit;
+            $this->idC = $bus->id;
+            $this->nombreC = $bus->nombreCliente;
+            $this->direccionC = $bus->direccion;
+            $this->telefonoC = $bus->telefono;
+            $this->correoC = $bus->email;
+            $this->nrcC = $bus->registro;
+            $this->actividadC = $bus->desActividad;
+            $this->tipoC = $bus->idenReceptor;
+        }
+        else
+        {
+            $this->emit('item-errorSearch', 'Desea Registrarlo ?');
+        }
+    }
+
+    public function SearchClientName()
+    {
+        $bus = Clientes::where('nombreCliente', 'like', '%'. $this->nombreC . '%')->first();
+
+        if($bus)
+        {
+            $this->duiC = ($bus->idenReceptor == 2) ? $bus->dui : $bus->nit;
+            $this->idC = $bus->id;
+            $this->nombreC = $bus->nombreCliente;
+            $this->direccionC = $bus->direccion;
+            $this->telefonoC = $bus->telefono;
+            $this->correoC = $bus->email;
+            $this->nrcC = $bus->registro;
+            $this->actividadC = $bus->desActividad;
+            $this->tipoC = $bus->idenReceptor;
+        }
+        else
+        {
+            $this->emit('item-errorSearch', 'Cliente no Encontrado, Desea Registrarlo ?');
+        }
+    }
+
+    public function SearchClientNrc()
+    {
+        $bus = Clientes::where('registro', $this->nrcC) ->whereNotIn('id', [1])->first();
+
+        if($bus)
+        {
+            $this->duiC = ($bus->idenReceptor == 2) ? $bus->dui : $bus->nit;
+            $this->idC = $bus->id;
+            $this->nombreC = $bus->nombreCliente;
+            $this->direccionC = $bus->direccion;
+            $this->telefonoC = $bus->telefono;
+            $this->correoC = $bus->email;
+            $this->nrcC = $bus->registro;
+            $this->actividadC = $bus->desActividad;
+            $this->tipoC = $bus->idenReceptor;
+        }
+        else
+        {
+            $this->emit('item-errorSearch', 'Cliente no Encontrado, Desea Registrarlo ?');
+        }
+    }
+
+    public function ScanCodeById($barcode)
+    {
+        $cant = 1;
+        $product = Productos::join('precios as p', 'productos.id', '=', 'p.producto')
+        ->join('inventarios as i', 'i.producto', 'productos.id')
+        ->where('p.codebar',  $barcode)
+        ->where('p.cantidad', 1)
+        ->where('i.sucursal', session('sucursal'))
+        ->select('productos.id', 'productos.nombreProducto', 'i.existencia', 'p.codebar', 'i.id as inventario', 'p.pvventa', 'p.cantidad', 'i.sucursal', 'p.presentacion', 'p.cantidad as descargar', 'p.medida')
+        ->first();
+
+        if ($product == null) {
+            $this->emit('scan-notfound', 'El producto no encontrado');
+        } else {
+            $user_id = Auth::user()->id;
+            $price = $product->pvventa;
+            $des = Descuentos::where('producto', $product->id)
+                ->where('inicio', '<=', Carbon::today()->endOfDay())
+                ->where('fin', '>=', Carbon::today()->startOfDay())
+                ->latest('created_at')
+                ->first();
+
+            if ($des) {
+                $descuento = ($price * $des->descuento) / 100;
+                $sub = $price - $descuento;
+            } else {
+                $descuento = 0;
+                $sub = $price;
+            }
+
+            $existingCartItem = tmpVentas::where('producto', $product->id)
+            ->where('user', $user_id)
+            ->where('sucursal', session('sucursal'))
+            ->first();
+
+            if ($existingCartItem)
+            {
+                if ($existingCartItem->descargar + $cant >= $product->existencia) {
+                    $this->emit('scan-notfound', 'Stock insuficiente');
+                }
+                else
+                {
+                    $existingCartItem->quantity = $existingCartItem->quantity + $cant;
+                    $existingCartItem->total = ($existingCartItem->quantity + $cant) * $existingCartItem->price;
+                    $existingCartItem->descargar = ($existingCartItem->quantity + $cant) * $existingCartItem->limit;
+                    $existingCartItem->save();
+                    $this->CantiUpdate($product->id, $existingCartItem->id);
+                }
+            }
+            else
+            {
+                if ($cant > $product->existencia) {
+                    $this->emit('scan-notfound', 'Stock insuficiente');
+                }
+                else
+                {
+                    $tmp =tmpVentas::create([
+                        'producto' => $product->id,
+                        'name' => $product->nombreProducto,
+                        'price' => $sub,
+                        'quantity' => $cant,
+                        'sucursal' => $product->sucursal,
+                        'codebar' => $product->codebar,
+                        'descuento' => $descuento,
+                        'total' => $sub * $cant,
+                        'medida' => $product->presentacion,
+                        'limit' => $product->descargar,
+                        'descargar' => $cant * $product->descargar,
+                        'uni' => $product->medida,
+                        'user' => $user_id,
+                        'caja' => session('caja'),
+                        'empresa' => session('empresa'),
+                        'esenario' => 1
+                    ]);
+                    $this->CantiUpdate($product->id, $tmp->id);
+                }
+            }
+
+            $this->Carrito();
+        }
+    }
+}

@@ -14,4 +14,9 @@ class ProductoUnidadMedida extends Model
         'simbolo',
         'estado'
     ];
+
+    public function HProducto()
+    {
+        return $this->hasMany(Producto::class, 'unidad_medida'); 
+    }
 }

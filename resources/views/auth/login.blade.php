@@ -66,7 +66,7 @@
                             </span>
                             <span class="app-brand-text demo text-heading fw-semibold">
                                 @if ($empresa)
-                                    {{ $empresa->razon; }}
+                                    {{ $empresa->razon }}
                                @endif
                             </span>
                         </a>
@@ -75,7 +75,7 @@
                     <div class="card-body mt-1">
                         <h5 class="mb-1">Bienvenido a
                             @if ($empresa)
-                                {{ $empresa->razon; }}
+                                {{ $empresa->razon }}
                             @endif! 👋🏻
                         </h5>
                         <form method="POST" action="{{ route('login') }}">

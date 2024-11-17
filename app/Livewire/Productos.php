@@ -7,6 +7,7 @@ use App\Models\UnidadMedida;
 use App\Models\ProductoCategoria;
 use App\Models\Producto;
 use App\Models\ProductoUnidadMedida;
+use App\Models\ProductosMarca;
 use App\Models\Sucursales as ModelSucursales;
 use App\Models\Inventario;
 use App\Models\kardex;
@@ -38,7 +39,8 @@ class Productos extends Component
             'unidades' => $this->UMexterno(),
             'unidadesInterno' => $this->UMinterno(),
             'categorias' => $this->Categorias(),
-            'productos' => $this->Allproductos()
+            'productos' => $this->Allproductos(),
+            'marcas'=> $this->Marcas()
         ]);
     }
 
@@ -100,6 +102,24 @@ class Productos extends Component
         return $query->get();
     }
 
+    public function Marcas()
+    {
+        if (!empty($this->search)) {
+
+            $this->resetPage();
+
+            $query = ProductosMarca::where('estado', '1')
+                ->orderBy('id', 'asc');
+
+        } else {
+            $query = ProductosMarca::where('estado', '1')
+                ->orderBy('id', 'asc');
+        }
+
+        $this->records = $query->count();
+
+        return $query->get();
+    }
 
     // consulta los productos ingresados en la base de datos
     public function Allproductos()
@@ -110,6 +130,7 @@ class Productos extends Component
 
             $query = Producto::where('codigo_barra', 'like', "%{$this->search}%")
                 ->orWhere('codigo_barra', 'like', "%{$this->search}%")
+                ->orWhere('producto', 'like', "%{$this->search}%")
                 ->orderBy('codigo_barra', 'asc');
 
         } else {
@@ -124,14 +145,13 @@ class Productos extends Component
     protected function rules()
     {
         $rules = [
-            'codigo_barra' => "required|unique:productos,codigo_barra,{$this->selected_id}|min:1",
+            'codigo_barra' => "nullable|unique:productos,codigo_barra,{$this->selected_id}",
             'producto' => "required|min:3",
             'categoria' => "required|min:1",
-            'marca' => "required|min:3",
+            'marca' => "required|min:1",
             'unidad_medida' => "required|min:1",
             'unidad_medida_mh' => "required|min:1",
         ];
-
 
         return $rules;
     }
@@ -139,15 +159,17 @@ class Productos extends Component
     protected function messages()
     {
         return [
-            'codigo_barra.required' => 'El codigo_barra es requerido',
             'codigo_barra.unique' => 'Ya existe el codigo_barra',
-            'codigo_barra.min'=> 'El codigo_barra debe tener mas de 1 caracteres',
             'producto.required' => 'El nombre del producto es requerido',
             'producto.unique' => 'Ya existe el nombre del producto',
             'producto.min'=> 'El producto debe tener mas de 1 caracteres',
             'marca.required' => 'El nombre de la marca es requerido',
             'marca.unique' => 'Ya existe el nombre de la marca',
             'marca.min'=> 'El nombre de la marca debe tener mas de 1 caracteres',
+            'civa.required' => 'El precio de la civa es requerido',
+            'civa.min'=> 'El precio de la civa debe tener mas de 1 caracteres',
+            'csiva.required' => 'El precio de la csiva es requerido',
+            'csiva.min'=> 'El precio de la csiva debe tener mas de 1 caracteres',
         ];
     }
 
@@ -158,7 +180,7 @@ class Productos extends Component
         DB::beginTransaction();
         try {
             $createProducto = Producto::create([
-                'codigo_barra' => $this->codigo_barra,
+                'codigo_barra' => empty($this->codigo_barra) ? null : $this->codigo_barra,
                 'producto' => $this->producto,
                 'categoria' => $this->categoria,
                 'marca' => $this->marca,
@@ -244,7 +266,11 @@ class Productos extends Component
         $this->validate($this->rules(), $this->messages());
 
         $updateProducto = Producto::find($this->selected_id);
-        $updateProducto->codigo_barra = $this->codigo_barra;
+        if(empty($this->codigo_barra)){
+            $updateProducto->codigo_barra = null;
+        }else{
+            $updateProducto->codigo_barra = $this->codigo_barra;
+        }
         $updateProducto->producto = $this->producto;
         $updateProducto->categoria = $this->categoria;
         $updateProducto->marca = $this->marca;
@@ -266,10 +292,12 @@ class Productos extends Component
         }
 
         $updateProducto->save();
-
+        $this->resetPage();
         $this->dispatch('noty', msg: 'PRODUCTO Actualizado con exito');
         $this->ResetInt();
         $this->dispatch('close-modal');
+
+        return redirect()->route(route: 'productos');
     }
 
     #[On('destroy')]
@@ -277,7 +305,16 @@ class Productos extends Component
     public function destroy($id)
     {
         $producto = Producto::findOrFail($id);
-        $producto->delete();
+
+        // if ($producto->HInventarios()->exists()) {
+        //     $this->dispatch('noty-error', msg: 'NO POSIBLE ELIMINAR EL PRODUCTO - este registro se esta usando en otro modulo.');
+        //     return;
+        // }
+
+        // $producto->delete();
+
+        $producto->deleted_at = now(); 
+        $producto->save();
 
         $this->resetPage();
         $this->ResetInt();
@@ -295,8 +332,8 @@ class Productos extends Component
         $this->unidad_medida_mh = 0;
         $this->image = '';
         $this->imageChange = '';
-        $this->civa = '';
-        $this->csiva = '';
+        $this->civa = 0;
+        $this->csiva = 0;
         $this->presentacion = '';
         $this->resetValidation();
         $this->activateNewSection = false;

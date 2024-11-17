@@ -56,13 +56,18 @@ class Parametros extends Model
         'ventamin' => 'decimal:4',
     ];
 
-    public function sucursales()
+    public function Rsucursales()
     {
         return $this->belongsTo(Sucursales::class, 'sucursal_id');
     }
 
-    public function empresas()
+    public function Rempresas()
     {
         return $this->belongsTo(Empresas::class, 'sucursal_id');
+    }
+
+    public function Ractividades()
+    {
+        return $this->hasMany(Actividades::class, 'caja'); 
     }
 }

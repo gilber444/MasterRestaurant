@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Departamento;
+use App\Models\Municipio;
+use App\Models\Sucursales;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -115,12 +117,25 @@ class Departamentos extends Component
     public function destroy($id)
     {
         $departamento = Departamento::find($id);
+
+        $empresa = Empresas::where('departamento', $departamento->id);
+        $municipio = Municipio::where('departamento', $departamento->id);
+        $sucursal = Sucursales::where('departamento', $departamento->id);
+        if ($empresa || $municipio || $sucursal) {
+            $this->dispatch('noty', msg: 'NO SE PUEDE ELIMINAR: EL DEPARTAMENTO ESTÁ ASOCIADO A UNA EMPRESA, MUNICIPIO Y SUCURSALES');
+            return;
+        }
+
         $departamento->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'DEPARTAMENTO ELIMINADO CON ÉXITO');
     }
 
-    #[On('ResetInt')]
+    protected $listeners = [
+        'store' => 'Store',
+        'edit' => 'Edit'
+    ];
+
     public function ResetInt()
     {
         $this->codigo = '';

@@ -14,10 +14,10 @@ class TipoEstablecimientoSeeder extends Seeder
     public function run(): void
     {
         $establecimiento = [
-            ['codigo' => '01', 'valor' => 'Sucursal / Agencia', 'status' => 'Desactivado'],
+            ['codigo' => '01', 'valor' => 'Sucursal', 'status' => 'Desactivado'],
             ['codigo' => '02', 'valor' => 'Casa Matriz', 'status' => 'Desactivado'],
             ['codigo' => '04', 'valor' => 'Bodega', 'status' => 'Desactivado'],
-            ['codigo' => '07', 'valor' => 'Predio y/o patio', 'status' => 'Desactivado'],
+            ['codigo' => '07', 'valor' => 'Patio', 'status' => 'Desactivado'],
             ['codigo' => '20', 'valor' => 'Otro', 'status' => 'Desactivado'],
         ];  
 

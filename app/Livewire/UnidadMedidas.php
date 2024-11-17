@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Producto;
 use App\Models\UnidadMedida;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -116,13 +117,22 @@ class UnidadMedidas extends Component
     public function destroy($id)
     {
         $medida = UnidadMedida::find($id);
+        $producto = Producto::where('unidad_medida_mh', $medida->id);
+        if ($producto) {
+            $this->dispatch('noty', msg: 'NO SE PUEDE ELIMINAR: LA UNIDAD DE MEDIDA ESTÁ ASOCIADO A UN PRODUCTO');
+            return;
+        }
+
         $medida->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'UNIDAD DE MEDIDA ELIMINADA CON ÉXITO');
     }
 
+    protected $listeners = [
+        'store' => 'Store',
+        'edit' => 'Edit'
+    ];
 
-    #[On('ResetInt')]
     public function ResetInt()
     {
         $this->codigo = '';

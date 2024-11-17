@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\Municipio;
 use App\Models\Distritos as Distrito;
+use App\Models\Empresas;
+use App\Models\Sucursales;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -111,12 +113,23 @@ class Distritos extends Component
     public function destroy($id)
     {
         $dis = Distrito::find($id);
+        $empresa = Empresas::where('distrito', $dis->id);
+        $sucursal = Sucursales::where('distrito', $dis->id);
+        if ($empresa || $sucursal) {
+            $this->dispatch('noty', msg: 'NO SE PUEDE ELIMINAR: EL DISTRITO ESTÁ ASOCIADO A UNA EMPRESA Y A UNA SUCURSAL');
+            return;
+        }
+        
         $dis->delete();
         $this->resetPage();
         $this->dispatch('noty', msg: 'DISTRITO ELIMINADO CON ÉXITO');
     }
 
-    #[On('ResetInt')]
+    protected $listeners = [
+        'store' => 'Store',
+        'edit' => 'Edit'
+    ];
+
     public function ResetInt()
     {
         $this->codigo = '';

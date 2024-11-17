@@ -68,6 +68,20 @@ class RegimenSeeder extends Seeder
                 ['codigo' => 'EX- 3.3059.058', 'valor' => 'Re-Exportación, Reexportación Proveniente de Admisión Temporal Reparación de Equipo Tecnológico Parque de Servicios, Remisión entre Usuarios Directos de Diferente Parque de Servicios', 'status' => 'Desactivado'],
                 ['codigo' => 'EX- 3.3070.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Régimen Común', 'status' => 'Desactivado'],
                 ['codigo' => 'EX- 3.3070.072', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3071.000', 'valor' => 'Reexp. Prov. de Deposito', 'status' => 'Desactivado'],
+                
+                ['codigo' => 'EX- 3.3052.000', 'valor' => 'Reexp. Prov. de Adm Temp', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3053.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3054.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3055.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3056.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
+
+                ['codigo' => 'EX- 3.3057.000', 'valor' => 'Re-Exportación, Reexportación Proveniente de Depósito., Decreto 738 Eléctricos e Híbridos', 'status' => 'Desactivado'],
         ];  
 
         DB::table('regimens')->insert($regimen);
